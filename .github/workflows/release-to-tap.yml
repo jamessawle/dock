@@ -1,0 +1,108 @@
+name: Release to Homebrew tap
+
+on:
+  push:
+    tags:
+      - "v*.*.*"   # e.g. v0.2.0
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  TAP_REPO: jamessawle/homebrew-tap
+  # Source of truth inside THIS repo:
+  FORMULA_SOURCE_PATH: packaging/homebrew/Formula/dock.rb
+  # Destination path inside the TAP repo:
+  FORMULA_DEST_PATH: Formula/dock.rb
+
+jobs:
+  build-formula:
+    name: Build updated formula
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+      tarball: ${{ steps.vars.outputs.tarball }}
+      sha256: ${{ steps.sha.outputs.sha256 }}
+    steps:
+      - name: Check out source (dock repo)
+        uses: actions/checkout@v4
+
+      - name: Derive version & tarball URL from tag
+        id: vars
+        run: |
+          echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          echo "tarball=https://github.com/jamessawle/dock/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz" >> "$GITHUB_OUTPUT"
+
+      - name: Compute sha256 of tag tarball
+        id: sha
+        run: |
+          set -euo pipefail
+          curl -Ls -o source.tgz "${{ steps.vars.outputs.tarball }}"
+          echo "sha256=$(sha256sum source.tgz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare updated formula
+        run: |
+          set -euo pipefail
+          mkdir -p out/Formula
+          cp "${FORMULA_SOURCE_PATH}" out/Formula/dock.rb
+
+          URL_ESC=$(printf '%s\n' "${{ steps.vars.outputs.tarball }}" | sed -e 's/[\\/&]/\\&/g')
+          SHA="${{ steps.sha.outputs.sha256 }}"
+
+          # Update url & sha256 (only) in the copied formula
+          sed -i -E 's|^([[:space:]]*url[[:space:]]*").*(")|\1'"$URL_ESC"'\2|' out/Formula/dock.rb
+          sed -i -E 's|^([[:space:]]*sha256[[:space:]]*").*(")|\1'"$SHA"'\2|' out/Formula/dock.rb
+
+      - name: Upload updated formula artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: updated-formula
+          path: out/Formula/dock.rb
+
+  pr-to-tap:
+    name: Open PR to tap
+    needs: build-formula
+    runs-on: ubuntu-latest
+    env:
+      BRANCH: bump-dock-${{ needs.build-formula.outputs.tag }}
+    steps:
+      - name: Download formula artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: updated-formula
+          path: updated
+
+      - name: Check out tap repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TAP_REPO }}
+          token: ${{ secrets.TAP_PUSH_TOKEN }}
+          path: tap
+
+      - name: Create branch and replace formula
+        working-directory: tap
+        run: |
+          set -euo pipefail
+          git checkout -b "${BRANCH}" || git checkout "${BRANCH}"
+          mkdir -p "$(dirname "${{ env.FORMULA_DEST_PATH }}")"
+          cp ../updated/dock.rb "${{ env.FORMULA_DEST_PATH }}"
+          git add "${{ env.FORMULA_DEST_PATH }}"
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "dock: bump to ${{ needs.build-formula.outputs.tag }}" || echo "No changes to commit"
+          git push -u origin "${BRANCH}"
+
+      - name: Open PR to tap
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.TAP_PUSH_TOKEN }}
+          title: "dock: bump to ${{ needs.build-formula.outputs.tag }}"
+          body: |
+            Automated bump from tag **${{ needs.build-formula.outputs.tag }}**.
+            - url: `${{ needs.build-formula.outputs.tarball }}`
+            - sha256: `${{ needs.build-formula.outputs.sha256 }}`
+            Source formula is maintained in the app repo.
+          branch: "${{ env.BRANCH }}"
+          base: "main"
+          path: tap
