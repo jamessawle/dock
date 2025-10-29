@@ -2,6 +2,10 @@ name: CI
 
 on:
   push:
+    branches:
+      - '**'        # all branches
+    tags-ignore:
+      - '*'         # ignore all tag pushes
   pull_request:
 
 jobs:

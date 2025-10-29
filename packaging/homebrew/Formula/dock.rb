@@ -5,18 +5,12 @@ class Dock < Formula
   sha256 "TO_BE_FILLED_BY_CI"
   license "MIT"
 
-  depends_on "yq"
   depends_on "dockutil"
+  depends_on :macos
+  depends_on "yq"
 
-  # Mandate macOS only
-  on_macos do
-    def install
-      bin.install "dock"
-    end
-  end
-
-  on_linux do
-    odie "dock is only supported on macOS."
+  def install
+    bin.install "dock"
   end
 
   test do
