@@ -46,6 +46,9 @@ Create a config:
       preset: classic      # classic | fan | list
       path: "~/Downloads"
       section: others      # apps-left | apps-right | others
+    settings:
+      autohide: true       # true | false
+      autohide_delay: 0.15 # seconds; rounded to 2 decimals
 
 Then:
 
@@ -88,6 +91,16 @@ Configure the “Downloads” stack or turn it off:
       preset: classic|fan|list
       path: "~/Downloads"
       section: apps-left|apps-right|others
+
+## Dock visibility
+
+Manage the Dock’s visibility alongside the tile layout:
+
+    settings:
+      autohide: false        # toggle "Automatically hide and show the Dock"
+      autohide_delay: 0.2    # seconds before re-hiding (rounded to 2 decimals)
+
+If `settings` is omitted we fall back to the defaults above (`autohide: false`, `autohide_delay: 0`). Defaults are stripped when you run `dock show` or `dock backup`, keeping configs tidy.
 
 ## Examples
 
