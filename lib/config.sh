@@ -180,8 +180,8 @@ validate_yaml_config() {
 	fi
 
 	if ((${#VALIDATION_ERRORS[@]} == 0)); then
-	CONFIG_NORMALIZED_JSON="$(normalize_config_json "$f")"
-	CONFIG_NORMALIZED_JSON="$(apply_settings_precision_json "$CONFIG_NORMALIZED_JSON")"
+		CONFIG_NORMALIZED_JSON="$(normalize_config_json "$f")"
+		CONFIG_NORMALIZED_JSON="$(apply_settings_precision_json "$CONFIG_NORMALIZED_JSON")"
 	else
 		CONFIG_NORMALIZED_JSON=""
 	fi

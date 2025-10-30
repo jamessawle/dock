@@ -79,11 +79,11 @@ dump_config() {
 	case "$autohide_lower" in
 	true | 1) autohide_value="true" ;;
 	esac
-if [[ -n "$autohide_delay_raw" ]]; then
-	autohide_delay_value="$(round_with_trim "$autohide_delay_raw" 2)"
-else
-	autohide_delay_value="0"
-fi
+	if [[ -n "$autohide_delay_raw" ]]; then
+		autohide_delay_value="$(round_with_trim "$autohide_delay_raw" 2)"
+	else
+		autohide_delay_value="0"
+	fi
 
 	# Emit YAML (strip defaults afterwards)
 	{
