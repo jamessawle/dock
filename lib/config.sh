@@ -5,6 +5,25 @@
 # shellcheck shell=bash
 
 VALIDATION_ERRORS=()
+CONFIG_NORMALIZED_JSON=""
+CONFIG_DEFAULT_DOWNLOAD_PRESET="classic"
+CONFIG_DEFAULT_DOWNLOAD_PATH="~/Downloads"
+CONFIG_DEFAULT_DOWNLOAD_SECTION="others"
+
+normalize_config_json() {
+	local f="$1"
+	yq -o=json '.downloads as $dl | {"apps": (.apps // []), "downloads": {"enabled": ($dl != "off"), "preset": (([$dl] | map(select(type == "!!map")) | .[0].preset) // "classic"), "path": (([$dl] | map(select(type == "!!map")) | .[0].path) // "~/Downloads"), "section": (([$dl] | map(select(type == "!!map")) | .[0].section) // "others")}}' "$f"
+}
+
+strip_config_defaults_yaml() {
+	# Remove downloads keys that match defaults; drop the map entirely if empty.
+	yq -P "
+		del(.downloads.preset | select(. == \"$CONFIG_DEFAULT_DOWNLOAD_PRESET\")) |
+		del(.downloads.path | select(. == \"$CONFIG_DEFAULT_DOWNLOAD_PATH\")) |
+		del(.downloads.section | select(. == \"$CONFIG_DEFAULT_DOWNLOAD_SECTION\")) |
+		del(.downloads | select(type == \"!!map\" and length == 0))
+	"
+}
 
 add_validation_error() {
 	VALIDATION_ERRORS+=("$1")
@@ -95,6 +114,12 @@ validate_yaml_config() {
 		fi
 	fi
 
+	if ((${#VALIDATION_ERRORS[@]} == 0)); then
+		CONFIG_NORMALIZED_JSON="$(normalize_config_json "$f")"
+	else
+		CONFIG_NORMALIZED_JSON=""
+	fi
+
 	((${#VALIDATION_ERRORS[@]} == 0))
 }
 
@@ -111,25 +136,29 @@ load_yaml_config() {
 		die "Invalid config: $f"
 	fi
 
-	local out
-	out="$(yq -r '.apps // [] | .[]' "$f" 2>/dev/null || true)"
-	while IFS= read -r l; do [[ -n "$l" ]] && parsed_apps+=("$l"); done <<<"$out"
+	local normalized="${CONFIG_NORMALIZED_JSON:-}"
+	if [[ -z "$normalized" ]]; then
+		normalized="$(normalize_config_json "$f")"
+	fi
 
-	local raw
-	raw="$(yq -r '.downloads // ""' "$f" 2>/dev/null || true)"
-	if [[ "$raw" == "off" ]]; then
+	local apps_out
+	apps_out="$(printf '%s' "$normalized" | yq -p=json -r '.apps[]?' 2>/dev/null || true)"
+	while IFS= read -r l; do [[ -n "$l" ]] && parsed_apps+=("$l"); done <<<"$apps_out"
+
+	local dl_enabled_raw dl_preset_raw dl_path_raw dl_section_raw
+	dl_enabled_raw="$(printf '%s' "$normalized" | yq -p=json -r '.downloads.enabled' 2>/dev/null || echo "true")"
+	dl_preset_raw="$(printf '%s' "$normalized" | yq -p=json -r '.downloads.preset' 2>/dev/null || echo "classic")"
+	dl_path_raw="$(printf '%s' "$normalized" | yq -p=json -r '.downloads.path' 2>/dev/null || echo "~/Downloads")"
+	dl_section_raw="$(printf '%s' "$normalized" | yq -p=json -r '.downloads.section' 2>/dev/null || echo "others")"
+
+	if [[ "$dl_enabled_raw" == "false" ]]; then
 		dl_enabled=0
-		dl_preset="classic"
-		dl_path="${HOME}/Downloads"
-		dl_section="others"
-		return 0
+	else
+		dl_enabled=1
 	fi
-	if yq -e '.downloads | type == "!!map"' "$f" >/dev/null 2>&1; then
-		dl_preset="$(yq -r '.downloads.preset // "classic"' "$f")"
-		dl_path="$(yq -r '.downloads.path // "~/" + "Downloads"' "$f")"
-		dl_path="${dl_path/#\~/$HOME}"
-		dl_section="$(yq -r '.downloads.section // "others"' "$f")"
-	fi
+	dl_preset="$dl_preset_raw"
+	dl_path="${dl_path_raw/#\~/$HOME}"
+	dl_section="$dl_section_raw"
 }
 
 build_preset_flags() {

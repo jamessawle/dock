@@ -69,22 +69,24 @@ dump_config() {
 		fi
 	fi
 
-	# Emit YAML
-	echo "apps:"
-	if [[ ${#apps[@]} -gt 0 ]]; then
-		local a
-		for a in "${apps[@]}"; do printf '  - %s\n' "$a"; done
-	fi
-	if [[ -n "$dl_section_found" && -n "$norm_dl" ]]; then
-		cat <<EOF
+	# Emit YAML (strip defaults afterwards)
+	{
+		echo "apps:"
+		if [[ ${#apps[@]} -gt 0 ]]; then
+			local a
+			for a in "${apps[@]}"; do printf '  - %s\n' "$a"; done
+		fi
+		if [[ -n "$dl_section_found" && -n "$norm_dl" ]]; then
+			cat <<EOF
 downloads:
   preset: classic
   path: "$norm_dl"
   section: $dl_section_found
 EOF
-	else
-		echo "downloads: off"
-	fi
+		else
+			echo "downloads: off"
+		fi
+	} | strip_config_defaults_yaml
 }
 
 backup_to_file() {
