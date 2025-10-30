@@ -10,7 +10,8 @@ class Dock < Formula
   depends_on "yq"
 
   def install
-    bin.install "dock"
+    libexec.install "dock", "lib"
+    bin.install_symlink libexec/"dock"
   end
 
   test do
