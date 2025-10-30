@@ -19,7 +19,7 @@
 
 set -euo pipefail
 LC_ALL=C
-VERSION="0.1.4"
+VERSION="0.1.5"
 
 DEBUG=${DEBUG:-0}
 QUIET=0
