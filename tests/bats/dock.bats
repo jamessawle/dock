@@ -35,8 +35,28 @@ downloads: off
 YAML
 	run "$BATS_TEST_TMPDIR/dock" --file "$BATS_TEST_TMPDIR/conf.yml" validate
 	[ "$status" -eq 0 ]
-	[[ "$output" =~ "Config:" ]]
-	[[ "$output" =~ "Downloads: off" ]]
+	[[ "$output" =~ "No errors were found in configuration file - $BATS_TEST_TMPDIR/conf.yml" ]]
+}
+
+@test "validate reports aggregated errors" {
+	cat >"$BATS_TEST_TMPDIR/conf-invalid.yml" <<'YAML'
+apps: wrong-type
+downloads:
+  preset: broken
+  section: sideways
+  path: 123
+  extra: true
+extra: true
+YAML
+	run "$BATS_TEST_TMPDIR/dock" --file "$BATS_TEST_TMPDIR/conf-invalid.yml" validate
+	[ "$status" -ne 0 ]
+	[[ "$output" =~ "6 errors were found in configuration file - $BATS_TEST_TMPDIR/conf-invalid.yml" ]]
+	[[ "$output" =~ "Unknown top-level key(s): extra" ]]
+	[[ "$output" =~ ".apps must be a YAML list" ]]
+	[[ "$output" =~ "Unknown .downloads key(s): extra" ]]
+	[[ "$output" =~ ".downloads.preset must be one of: classic, fan, list" ]]
+	[[ "$output" =~ ".downloads.section must be one of: apps-left, apps-right, others" ]]
+	[[ "$output" =~ ".downloads.path must be a string" ]]
 }
 
 @test "reset --dry-run emits dockutil commands" {
