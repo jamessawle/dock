@@ -11,6 +11,8 @@ Minimal, predictable Dock management from a YAML config. Dry-run shows the exact
     brew tap jamessawle/tap
     brew install dock
 
+Homebrew installs Bash and Zsh completions automatically. Open a new shell (or run `compinit`) to pick them up.
+
 ### Manual
 
     # Dependencies
@@ -19,6 +21,17 @@ Minimal, predictable Dock management from a YAML config. Dry-run shows the exact
     # Install the script
     curl -fsSL https://raw.githubusercontent.com/jamessawle/dock/v0.1.0/dock -o /usr/local/bin/dock
     chmod +x /usr/local/bin/dock
+
+Grab completions manually when not using Homebrew:
+
+```bash
+# Bash
+curl -fsSL https://raw.githubusercontent.com/jamessawle/dock/main/completions/dock.bash -o /usr/local/etc/bash_completion.d/dock
+
+# Zsh
+curl -fsSL https://raw.githubusercontent.com/jamessawle/dock/main/completions/_dock -o ~/.zfunc/_dock
+echo 'fpath=(~/.zfunc $fpath)' >> ~/.zshrc   # once
+```
 
 ## Quick start
 

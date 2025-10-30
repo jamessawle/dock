@@ -12,6 +12,8 @@ class Dock < Formula
   def install
     libexec.install "dock", "lib"
     bin.install_symlink libexec/"dock"
+    bash_completion.install "completions/dock.bash" => "dock"
+    zsh_completion.install "completions/_dock"
   end
 
   test do
