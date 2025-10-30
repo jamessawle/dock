@@ -1,0 +1,27 @@
+#!/bin/sh
+set -eu
+
+if [ -n "${SKIP_MAKE_CI:-}" ]; then
+	echo "pre-commit: SKIP_MAKE_CI set; skipping make ci." >&2
+	exit 0
+fi
+
+if ! command -v make >/dev/null 2>&1; then
+	echo "pre-commit: make command not found; skipping make ci." >&2
+	exit 0
+fi
+
+# Ensure we run from the repository root
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+echo "pre-commit: running make ci..." >&2
+if ! make ci; then
+	status=$?
+	echo "pre-commit: make ci failed (exit $status)." >&2
+	echo "pre-commit: fix issues before committing or set SKIP_MAKE_CI=1 to bypass." >&2
+	exit $status
+fi
+
+echo "pre-commit: make ci passed." >&2
+exit 0

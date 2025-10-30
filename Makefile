@@ -33,4 +33,7 @@ test: ## Run bats tests
 ci: install lint fmt-check test ## Full CI pipeline
 	echo "All checks passed ✅"
 
-.PHONY: help install lint fmt fmt-check test ci
+hooks: ## Configure git hooks to run make ci on commit
+	git config core.hooksPath .githooks
+
+.PHONY: help install lint fmt fmt-check test ci hooks

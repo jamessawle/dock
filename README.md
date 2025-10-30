@@ -92,6 +92,14 @@ Show current Dock apps:
 
     dock show
 
+## Development
+
+Install local Git hooks so commits run the full CI check:
+
+    make hooks
+
+The pre-commit hook runs `make ci` and stops the commit if formatting, linting, or tests fail. Set `SKIP_MAKE_CI=1` when committing to bypass the check in exceptional cases.
+
 ## Requirements
 
 - macOS
