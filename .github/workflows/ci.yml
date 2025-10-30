@@ -8,6 +8,9 @@ on:
       - '*'         # ignore all tag pushes
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   macos:
     runs-on: macos-latest
