@@ -6,6 +6,7 @@ setup() {
 	mkdir -p "$HOME/.config/dock" "$HOME/Applications" "$HOME/Library/Preferences"
 	cp "$BATS_TEST_DIRNAME/../../dock" "$BATS_TEST_TMPDIR/dock"
 	chmod +x "$BATS_TEST_TMPDIR/dock"
+	cp -R "$BATS_TEST_DIRNAME/../../lib" "$BATS_TEST_TMPDIR/lib"
 }
 
 @test "--version prints version" {
