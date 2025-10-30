@@ -24,7 +24,7 @@ _pb_count() {
 	echo "$out" | awk 'BEGIN{n=0} /^    Dict {/ {n++} END{print n}'
 }
 
-generate_snapshot_yaml() {
+dump_config() {
 	local plist="$HOME/Library/Preferences/com.apple.dock.plist"
 
 	# Apps
@@ -93,6 +93,6 @@ backup_to_file() {
 	local dir
 	dir="$(dirname "$out")"
 	[[ -d "$dir" ]] || mkdir -p "$dir"
-	generate_snapshot_yaml >"$out"
+	dump_config >"$out"
 	log "wrote snapshot to $out"
 }

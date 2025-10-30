@@ -57,7 +57,7 @@ Then:
 
     reset     Reset Dock from a config file (or via discovery)
     show      Print current Dock app names (apps section)
-    validate  Validate config and print the planned actions; no changes
+    validate  Validate config and report any errors; no changes
     backup    Write current Dock as YAML (requires --file)
 
 ### Common options

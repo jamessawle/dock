@@ -35,8 +35,28 @@ downloads: off
 YAML
 	run "$BATS_TEST_TMPDIR/dock" --file "$BATS_TEST_TMPDIR/conf.yml" validate
 	[ "$status" -eq 0 ]
-	[[ "$output" =~ "Config:" ]]
-	[[ "$output" =~ "Downloads: off" ]]
+	[[ "$output" =~ "No errors were found in configuration file - $BATS_TEST_TMPDIR/conf.yml" ]]
+}
+
+@test "validate reports aggregated errors" {
+	cat >"$BATS_TEST_TMPDIR/conf-invalid.yml" <<'YAML'
+apps: wrong-type
+downloads:
+  preset: broken
+  section: sideways
+  path: 123
+  extra: true
+extra: true
+YAML
+	run "$BATS_TEST_TMPDIR/dock" --file "$BATS_TEST_TMPDIR/conf-invalid.yml" validate
+	[ "$status" -ne 0 ]
+	[[ "$output" =~ "6 errors were found in configuration file - $BATS_TEST_TMPDIR/conf-invalid.yml" ]]
+	[[ "$output" =~ "Unknown top-level key(s): extra" ]]
+	[[ "$output" =~ ".apps must be a YAML list" ]]
+	[[ "$output" =~ "Unknown .downloads key(s): extra" ]]
+	[[ "$output" =~ ".downloads.preset must be one of: classic, fan, list" ]]
+	[[ "$output" =~ ".downloads.section must be one of: apps-left, apps-right, others" ]]
+	[[ "$output" =~ ".downloads.path must be a string" ]]
 }
 
 @test "reset --dry-run emits dockutil commands" {
@@ -53,4 +73,60 @@ YAML
 	[ "$status" -eq 0 ]
 	[[ "$output" =~ "\\[DRY-RUN\\] dockutil --remove all --no-restart" ]]
 	[[ "$output" =~ "killall Dock" ]]
+}
+
+@test "show emits same config as backup" {
+	mkdir -p "$HOME/Downloads"
+	local plist="$HOME/Library/Preferences/com.apple.dock.plist"
+	local downloads_url="file://$HOME/Downloads/"
+	cat >"$plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>persistent-apps</key>
+	<array>
+		<dict>
+			<key>tile-data</key>
+			<dict>
+				<key>file-label</key>
+				<string>Calendar</string>
+				<key>file-data</key>
+				<dict>
+					<key>_CFURLString</key>
+					<string>/Applications/Calendar.app</string>
+				</dict>
+			</dict>
+		</dict>
+	</array>
+	<key>persistent-others</key>
+	<array>
+		<dict>
+			<key>tile-data</key>
+			<dict>
+				<key>file-label</key>
+				<string>Downloads</string>
+				<key>file-data</key>
+				<dict>
+					<key>_CFURLString</key>
+					<string>$downloads_url</string>
+				</dict>
+			</dict>
+		</dict>
+	</array>
+</dict>
+</plist>
+PLIST
+
+	run "$BATS_TEST_TMPDIR/dock" show
+	[ "$status" -eq 0 ]
+	show_output="$output"
+
+	local snapshot="$BATS_TEST_TMPDIR/dock-snapshot.yml"
+	run "$BATS_TEST_TMPDIR/dock" --file "$snapshot" backup
+	[ "$status" -eq 0 ]
+	local backup_output
+	backup_output="$(cat "$snapshot")"
+
+	[ "$show_output" = "$backup_output" ]
 }

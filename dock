@@ -79,7 +79,7 @@ Usage:
 Commands:
   reset                 Reset Dock from a config file (or discovery)
   show                  Print current Dock app names (apps section)
-  validate              Validate config and print planned actions; no changes
+  validate              Validate config and report any errors; no changes
   backup                Write current Dock as YAML config (requires --file)
 
 Options (general):
@@ -179,27 +179,27 @@ main() {
 
 	case "$cmd" in
 	show)
-		/usr/libexec/PlistBuddy -c 'Print persistent-apps' "$HOME/Library/Preferences/com.apple.dock.plist" 2>/dev/null |
-			/usr/bin/awk -F'= ' '/file-label/ { gsub(/"/, "", $2); print $2 }'
+		dump_config
 		;;
 	validate)
 		local cf=""
 		if ! cf="$(resolve_config_path)"; then
 			die "No config found for validate. Use --file PATH or set up discovery."
 		fi
-		# Strict validation + preview
-		validate_yaml_config "$cf"
-		load_yaml_config "$cf"
-		printf "Config: %s\n" "$cf"
-		printf "Apps:\n"
-		if [[ ${#parsed_apps[@]} -eq 0 ]]; then echo "  (none)"; else
-			local a
-			for a in "${parsed_apps[@]}"; do echo "  - $a"; done
-		fi
-		if [[ "$dl_enabled" -eq 1 ]]; then
-			printf "Downloads:\n  preset: %s\n  path:   %s\n  section:%s\n" "$dl_preset" "$dl_path" "$dl_section"
+		if validate_yaml_config "$cf"; then
+			printf "No errors were found in configuration file - %s\n" "$cf"
 		else
-			echo "Downloads: off"
+			local count=${#VALIDATION_ERRORS[@]}
+			if ((count == 1)); then
+				printf "1 error was found in configuration file - %s\n" "$cf"
+			else
+				printf "%d errors were found in configuration file - %s\n" "$count" "$cf"
+			fi
+			local err
+			for err in "${VALIDATION_ERRORS[@]}"; do
+				printf "%s\n" "$err"
+			done
+			exit 1
 		fi
 		;;
 	reset)
