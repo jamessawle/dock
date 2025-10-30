@@ -54,3 +54,59 @@ YAML
 	[[ "$output" =~ "\\[DRY-RUN\\] dockutil --remove all --no-restart" ]]
 	[[ "$output" =~ "killall Dock" ]]
 }
+
+@test "show emits same config as backup" {
+	mkdir -p "$HOME/Downloads"
+	local plist="$HOME/Library/Preferences/com.apple.dock.plist"
+	local downloads_url="file://$HOME/Downloads/"
+	cat >"$plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>persistent-apps</key>
+	<array>
+		<dict>
+			<key>tile-data</key>
+			<dict>
+				<key>file-label</key>
+				<string>Calendar</string>
+				<key>file-data</key>
+				<dict>
+					<key>_CFURLString</key>
+					<string>/Applications/Calendar.app</string>
+				</dict>
+			</dict>
+		</dict>
+	</array>
+	<key>persistent-others</key>
+	<array>
+		<dict>
+			<key>tile-data</key>
+			<dict>
+				<key>file-label</key>
+				<string>Downloads</string>
+				<key>file-data</key>
+				<dict>
+					<key>_CFURLString</key>
+					<string>$downloads_url</string>
+				</dict>
+			</dict>
+		</dict>
+	</array>
+</dict>
+</plist>
+PLIST
+
+	run "$BATS_TEST_TMPDIR/dock" show
+	[ "$status" -eq 0 ]
+	show_output="$output"
+
+	local snapshot="$BATS_TEST_TMPDIR/dock-snapshot.yml"
+	run "$BATS_TEST_TMPDIR/dock" --file "$snapshot" backup
+	[ "$status" -eq 0 ]
+	local backup_output
+	backup_output="$(cat "$snapshot")"
+
+	[ "$show_output" = "$backup_output" ]
+}

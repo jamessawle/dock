@@ -179,8 +179,7 @@ main() {
 
 	case "$cmd" in
 	show)
-		/usr/libexec/PlistBuddy -c 'Print persistent-apps' "$HOME/Library/Preferences/com.apple.dock.plist" 2>/dev/null |
-			/usr/bin/awk -F'= ' '/file-label/ { gsub(/"/, "", $2); print $2 }'
+		dump_config
 		;;
 	validate)
 		local cf=""
