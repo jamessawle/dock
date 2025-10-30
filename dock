@@ -89,11 +89,14 @@ run_reset_with_config() {
 	validate_yaml_config "$cf"
 	log "dock reset using config from $cf"
 	load_yaml_config "$cf"
+	build_plan "${parsed_apps[@]}"
 	if [[ "$DRY_RUN" -eq 1 ]]; then
 		printf "• [DRY-RUN] Would reset Dock with apps: %s; downloads: %s/%s -> %s\n" \
 			"${parsed_apps[*]:-<none>}" "$dl_preset" "$dl_section" "$dl_path"
+		print_plan
+	else
+		execute_plan
 	fi
-	reset_dock "${parsed_apps[@]}"
 }
 
 resolve_config_path() {
