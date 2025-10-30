@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cmd="${1:-}"
+shift || true
+case "$cmd" in
+	read)
+		domain="${1:-}"
+		key="${2:-}"
+		if [[ "$domain" != "com.apple.dock" || -z "$key" ]]; then
+			exit 1
+		fi
+		case "$key" in
+			autohide)
+			printf '%s\n' "${TEST_DEFAULTS_AUTOHIDE:-0}"
+			;;
+			autohide-delay)
+			printf '%s\n' "${TEST_DEFAULTS_AUTOHIDE_DELAY:-0}"
+			;;
+			*)
+				exit 1
+				;;
+		esac
+		;;
+	write)
+		:
+		;;
+	*)
+		exit 1
+		;;
+esac

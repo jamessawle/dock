@@ -3,6 +3,8 @@
 setup() {
 	export PATH="$BATS_TEST_DIRNAME/../bin:$PATH"
 	export HOME="$BATS_TEST_TMPDIR/home"
+	export TEST_DEFAULTS_AUTOHIDE=0
+	export TEST_DEFAULTS_AUTOHIDE_DELAY=0
 	mkdir -p "$HOME/.config/dock" "$HOME/Applications" "$HOME/Library/Preferences"
 	cp "$BATS_TEST_DIRNAME/../../dock" "$BATS_TEST_TMPDIR/dock"
 	chmod +x "$BATS_TEST_TMPDIR/dock"
@@ -76,6 +78,8 @@ YAML
 }
 
 @test "reset --dry-run emits dockutil commands" {
+	export TEST_DEFAULTS_AUTOHIDE=0
+	export TEST_DEFAULTS_AUTOHIDE_DELAY=0
 	mkdir -p "$BATS_TEST_TMPDIR/apps/Chrome.app"
 	cat >"$BATS_TEST_TMPDIR/conf.yml" <<YAML
 apps:
@@ -84,11 +88,35 @@ downloads:
   preset: classic
   path: "$BATS_TEST_TMPDIR/Downloads"
   section: others
+settings:
+  autohide: true
+  autohide_delay: 0.155
 YAML
 	run "$BATS_TEST_TMPDIR/dock" --dry-run --file "$BATS_TEST_TMPDIR/conf.yml" reset
 	[ "$status" -eq 0 ]
 	[[ "$output" =~ "\\[DRY-RUN\\] dockutil --remove all --no-restart" ]]
+	[[ "$output" =~ "defaults write com.apple.dock autohide -bool true" ]]
+	[[ "$output" =~ "defaults write com.apple.dock autohide-delay -float 0.16" ]]
 	[[ "$output" =~ "killall Dock" ]]
+}
+
+@test "reset --dry-run skips settings writes when unchanged" {
+	export TEST_DEFAULTS_AUTOHIDE=1
+	export TEST_DEFAULTS_AUTOHIDE_DELAY=0.16
+	mkdir -p "$BATS_TEST_TMPDIR/apps/Safari.app"
+	cat >"$BATS_TEST_TMPDIR/conf-match.yml" <<YAML
+apps:
+  - "$BATS_TEST_TMPDIR/apps/Safari.app"
+settings:
+  autohide: true
+  autohide_delay: 0.16
+YAML
+	run "$BATS_TEST_TMPDIR/dock" --dry-run --file "$BATS_TEST_TMPDIR/conf-match.yml" reset
+	[ "$status" -eq 0 ]
+	[[ ! "$output" =~ "defaults write com.apple.dock autohide -bool" ]]
+	[[ ! "$output" =~ "defaults write com.apple.dock autohide-delay -float" ]]
+	export TEST_DEFAULTS_AUTOHIDE=0
+	export TEST_DEFAULTS_AUTOHIDE_DELAY=0
 }
 
 @test "show emits same config as backup" {
