@@ -3,6 +3,8 @@
 setup() {
 	export PATH="$BATS_TEST_DIRNAME/../bin:$PATH"
 	export HOME="$BATS_TEST_TMPDIR/home"
+	export TEST_DEFAULTS_AUTOHIDE=0
+	export TEST_DEFAULTS_AUTOHIDE_DELAY=0
 	mkdir -p "$HOME/.config/dock" "$HOME/Applications" "$HOME/Library/Preferences"
 	cp "$BATS_TEST_DIRNAME/../../dock" "$BATS_TEST_TMPDIR/dock"
 	chmod +x "$BATS_TEST_TMPDIR/dock"
@@ -59,7 +61,25 @@ YAML
 	[[ "$output" =~ ".downloads.path must be a string" ]]
 }
 
+@test "validate reports settings errors" {
+	cat >"$BATS_TEST_TMPDIR/conf-settings-invalid.yml" <<'YAML'
+apps: []
+downloads: off
+settings:
+  autohide: maybe
+  autohide_delay: -1
+  extra: true
+YAML
+	run "$BATS_TEST_TMPDIR/dock" --file "$BATS_TEST_TMPDIR/conf-settings-invalid.yml" validate
+	[ "$status" -ne 0 ]
+	[[ "$output" =~ "Unknown .settings key(s): extra" ]]
+	[[ "$output" =~ ".settings.autohide must be a boolean" ]]
+	[[ "$output" =~ ".settings.autohide_delay must be >= 0" ]]
+}
+
 @test "reset --dry-run emits dockutil commands" {
+	export TEST_DEFAULTS_AUTOHIDE=0
+	export TEST_DEFAULTS_AUTOHIDE_DELAY=0
 	mkdir -p "$BATS_TEST_TMPDIR/apps/Chrome.app"
 	cat >"$BATS_TEST_TMPDIR/conf.yml" <<YAML
 apps:
@@ -68,11 +88,35 @@ downloads:
   preset: classic
   path: "$BATS_TEST_TMPDIR/Downloads"
   section: others
+settings:
+  autohide: true
+  autohide_delay: 0.155
 YAML
 	run "$BATS_TEST_TMPDIR/dock" --dry-run --file "$BATS_TEST_TMPDIR/conf.yml" reset
 	[ "$status" -eq 0 ]
 	[[ "$output" =~ "\\[DRY-RUN\\] dockutil --remove all --no-restart" ]]
+	[[ "$output" =~ "defaults write com.apple.dock autohide -bool true" ]]
+	[[ "$output" =~ "defaults write com.apple.dock autohide-delay -float 0.16" ]]
 	[[ "$output" =~ "killall Dock" ]]
+}
+
+@test "reset --dry-run skips settings writes when unchanged" {
+	export TEST_DEFAULTS_AUTOHIDE=1
+	export TEST_DEFAULTS_AUTOHIDE_DELAY=0.16
+	mkdir -p "$BATS_TEST_TMPDIR/apps/Safari.app"
+	cat >"$BATS_TEST_TMPDIR/conf-match.yml" <<YAML
+apps:
+  - "$BATS_TEST_TMPDIR/apps/Safari.app"
+settings:
+  autohide: true
+  autohide_delay: 0.16
+YAML
+	run "$BATS_TEST_TMPDIR/dock" --dry-run --file "$BATS_TEST_TMPDIR/conf-match.yml" reset
+	[ "$status" -eq 0 ]
+	[[ ! "$output" =~ "defaults write com.apple.dock autohide -bool" ]]
+	[[ ! "$output" =~ "defaults write com.apple.dock autohide-delay -float" ]]
+	export TEST_DEFAULTS_AUTOHIDE=0
+	export TEST_DEFAULTS_AUTOHIDE_DELAY=0
 }
 
 @test "show emits same config as backup" {
@@ -112,15 +156,22 @@ YAML
 					<string>$downloads_url</string>
 				</dict>
 			</dict>
-		</dict>
-	</array>
-</dict>
+			</dict>
+		</array>
+		<key>autohide</key>
+		<true/>
+		<key>autohide-delay</key>
+		<real>0.155</real>
+	</dict>
 </plist>
 PLIST
 
 	run "$BATS_TEST_TMPDIR/dock" show
 	[ "$status" -eq 0 ]
 	show_output="$output"
+	[[ "$show_output" =~ "settings:" ]]
+	[[ "$show_output" =~ "autohide: true" ]]
+	[[ "$show_output" =~ "autohide_delay: 0.16" ]]
 
 	local snapshot="$BATS_TEST_TMPDIR/dock-snapshot.yml"
 	run "$BATS_TEST_TMPDIR/dock" --file "$snapshot" backup

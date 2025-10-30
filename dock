@@ -61,6 +61,8 @@ LIB_DIR="${SCRIPT_DIR}/lib"
 source "${LIB_DIR}/version.sh"
 # shellcheck source=lib/env.sh
 source "${LIB_DIR}/env.sh"
+# shellcheck source=lib/string_utils.sh
+source "${LIB_DIR}/string_utils.sh"
 # shellcheck source=lib/config.sh
 source "${LIB_DIR}/config.sh"
 # shellcheck source=lib/dock_ops.sh

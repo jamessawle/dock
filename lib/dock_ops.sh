@@ -6,6 +6,38 @@
 
 dock_plan=()
 
+read_defaults_value() {
+	local domain="$1" key="$2"
+	local out
+	if out="$(defaults read "$domain" "$key" 2>/dev/null)"; then
+		printf '%s' "$out"
+	else
+		printf ''
+	fi
+}
+
+current_autohide_value() {
+	local raw
+	raw="$(read_defaults_value "com.apple.dock" "autohide")"
+	local lowered
+	lowered="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]')"
+	case "$lowered" in
+	true | 1) echo "true" ;;
+	*) echo "false" ;;
+	esac
+}
+
+current_autohide_delay_value() {
+	local raw
+	raw="$(read_defaults_value "com.apple.dock" "autohide-delay")"
+	[[ -z "$raw" ]] && raw="0"
+	if declare -F round_with_trim >/dev/null; then
+		round_with_trim "$raw" 2
+	else
+		printf '%s' "$raw"
+	fi
+}
+
 add_app_command() {
 	local app="$1" path
 	path="$(app_path_for "$app")"
@@ -14,6 +46,15 @@ add_app_command() {
 		return 1
 	fi
 	printf "dockutil --add %q --no-restart" "$path"
+}
+
+build_preset_flags() {
+	case "$1" in
+	classic) echo "--view grid --display folder --sort dateadded" ;;
+	fan) echo "--view fan --display stack --sort dateadded" ;;
+	list) echo "--view list --display folder --sort name" ;;
+	*) echo "--view grid --display folder --sort dateadded" ;;
+	esac
 }
 
 add_downloads_command() {
@@ -46,6 +87,14 @@ build_plan() {
 	fi
 	if [[ "$dl_enabled" -eq 1 && "$dl_section" == "others" ]]; then
 		cmd="$(add_downloads_command)" && dock_plan+=("$cmd")
+	fi
+
+	if [[ "$settings_autohide" != "$(current_autohide_value)" ]]; then
+		dock_plan+=("defaults write com.apple.dock autohide -bool $settings_autohide")
+	fi
+
+	if [[ "$settings_autohide_delay" != "$(current_autohide_delay_value)" ]]; then
+		dock_plan+=("defaults write com.apple.dock autohide-delay -float $settings_autohide_delay")
 	fi
 
 	dock_plan+=("killall Dock")
