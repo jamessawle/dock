@@ -18,7 +18,7 @@ install: ## Install dev tools
 	brew list --versions yq >/dev/null 2>&1 || brew install yq
 
 lint: ## Run shellcheck
-	$(SHELLCHECK) ./dock
+	$(SHELLCHECK) -x ./dock
 
 fmt: ## Apply shfmt formatting
 	$(SHFMT) -w .
