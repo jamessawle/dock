@@ -59,6 +59,22 @@ YAML
 	[[ "$output" =~ ".downloads.path must be a string" ]]
 }
 
+@test "validate reports settings errors" {
+	cat >"$BATS_TEST_TMPDIR/conf-settings-invalid.yml" <<'YAML'
+apps: []
+downloads: off
+settings:
+  autohide: maybe
+  autohide_delay: -1
+  extra: true
+YAML
+	run "$BATS_TEST_TMPDIR/dock" --file "$BATS_TEST_TMPDIR/conf-settings-invalid.yml" validate
+	[ "$status" -ne 0 ]
+	[[ "$output" =~ "Unknown .settings key(s): extra" ]]
+	[[ "$output" =~ ".settings.autohide must be a boolean" ]]
+	[[ "$output" =~ ".settings.autohide_delay must be >= 0" ]]
+}
+
 @test "reset --dry-run emits dockutil commands" {
 	mkdir -p "$BATS_TEST_TMPDIR/apps/Chrome.app"
 	cat >"$BATS_TEST_TMPDIR/conf.yml" <<YAML
@@ -112,15 +128,22 @@ YAML
 					<string>$downloads_url</string>
 				</dict>
 			</dict>
-		</dict>
-	</array>
-</dict>
+			</dict>
+		</array>
+		<key>autohide</key>
+		<true/>
+		<key>autohide-delay</key>
+		<real>0.155</real>
+	</dict>
 </plist>
 PLIST
 
 	run "$BATS_TEST_TMPDIR/dock" show
 	[ "$status" -eq 0 ]
 	show_output="$output"
+	[[ "$show_output" =~ "settings:" ]]
+	[[ "$show_output" =~ "autohide: true" ]]
+	[[ "$show_output" =~ "autohide_delay: 0.16" ]]
 
 	local snapshot="$BATS_TEST_TMPDIR/dock-snapshot.yml"
 	run "$BATS_TEST_TMPDIR/dock" --file "$snapshot" backup

@@ -16,6 +16,15 @@ add_app_command() {
 	printf "dockutil --add %q --no-restart" "$path"
 }
 
+build_preset_flags() {
+	case "$1" in
+	classic) echo "--view grid --display folder --sort dateadded" ;;
+	fan) echo "--view fan --display stack --sort dateadded" ;;
+	list) echo "--view list --display folder --sort name" ;;
+	*) echo "--view grid --display folder --sort dateadded" ;;
+	esac
+}
+
 add_downloads_command() {
 	local flags target section
 	flags="$(build_preset_flags "$dl_preset")"

@@ -9,20 +9,58 @@ CONFIG_NORMALIZED_JSON=""
 CONFIG_DEFAULT_DOWNLOAD_PRESET="classic"
 CONFIG_DEFAULT_DOWNLOAD_PATH="~/Downloads"
 CONFIG_DEFAULT_DOWNLOAD_SECTION="others"
+CONFIG_DEFAULT_SETTING_AUTOHIDE=false
+CONFIG_DEFAULT_SETTING_AUTOHIDE_DELAY=0
+
+settings_autohide="$CONFIG_DEFAULT_SETTING_AUTOHIDE"
+settings_autohide_delay="$CONFIG_DEFAULT_SETTING_AUTOHIDE_DELAY"
 
 normalize_config_json() {
 	local f="$1"
-	yq -o=json '.downloads as $dl | {"apps": (.apps // []), "downloads": {"enabled": ($dl != "off"), "preset": (([$dl] | map(select(type == "!!map")) | .[0].preset) // "classic"), "path": (([$dl] | map(select(type == "!!map")) | .[0].path) // "~/Downloads"), "section": (([$dl] | map(select(type == "!!map")) | .[0].section) // "others")}}' "$f"
+	yq -o=json '
+		. as $cfg
+		| ($cfg.downloads) as $dl
+		| ($cfg.settings // {}) as $settings
+		| {
+			"apps": ($cfg.apps // []),
+			"downloads": {
+				"enabled": ($dl != "off"),
+				"preset": (([$dl] | map(select(type == "!!map")) | .[0].preset) // "classic"),
+				"path": (([$dl] | map(select(type == "!!map")) | .[0].path) // "~/Downloads"),
+				"section": (([$dl] | map(select(type == "!!map")) | .[0].section) // "others")
+			},
+			"settings": {
+				"autohide": ($settings.autohide // false),
+				"autohide_delay": ($settings.autohide_delay // 0)
+			}
+		}
+	' "$f"
 }
 
 strip_config_defaults_yaml() {
-	# Remove downloads keys that match defaults; drop the map entirely if empty.
+	# Remove downloads/settings keys that match defaults; drop empty maps.
 	yq -P "
 		del(.downloads.preset | select(. == \"$CONFIG_DEFAULT_DOWNLOAD_PRESET\")) |
 		del(.downloads.path | select(. == \"$CONFIG_DEFAULT_DOWNLOAD_PATH\")) |
 		del(.downloads.section | select(. == \"$CONFIG_DEFAULT_DOWNLOAD_SECTION\")) |
-		del(.downloads | select(type == \"!!map\" and length == 0))
+		del(.downloads | select(type == \"!!map\" and length == 0)) |
+		del(.settings.autohide | select(. == ${CONFIG_DEFAULT_SETTING_AUTOHIDE})) |
+		del(.settings.autohide_delay | select(. == ${CONFIG_DEFAULT_SETTING_AUTOHIDE_DELAY} or . == ${CONFIG_DEFAULT_SETTING_AUTOHIDE_DELAY}.0)) |
+		del(.settings | select(type == \"!!map\" and length == 0))
 	"
+}
+
+apply_settings_precision_json() {
+	local json="$1"
+	if ! declare -F round_with_trim >/dev/null; then
+		printf '%s' "$json"
+		return
+	fi
+	local delay_raw
+	delay_raw="$(printf '%s' "$json" | yq -p=json -r '.settings.autohide_delay' 2>/dev/null || echo "0")"
+	local delay_trimmed
+	delay_trimmed="$(round_with_trim "$delay_raw" 2)"
+	printf '%s' "$json" | ROUND_VALUE="$delay_trimmed" yq -p=json -o=json '.settings.autohide_delay = (env(ROUND_VALUE) | tonumber)'
 }
 
 add_validation_error() {
@@ -35,7 +73,7 @@ validate_yaml_config() {
 
 	# Unknown top-level keys
 	local unknown
-	unknown="$(yq -r 'keys | map(select(. != "apps" and . != "downloads")) | .[]?' "$f" || true)"
+	unknown="$(yq -r 'keys | map(select(. != "apps" and . != "downloads" and . != "settings")) | .[]?' "$f" || true)"
 	if [[ -n "$unknown" ]]; then
 		add_validation_error "Unknown top-level key(s): ${unknown//$'\n'/, }"
 	fi
@@ -114,8 +152,36 @@ validate_yaml_config() {
 		fi
 	fi
 
+	# settings: optional map with allowed keys
+	if yq -e '.settings? != null' "$f" >/dev/null 2>&1; then
+		if ! yq -e '.settings | type == "!!map"' "$f" >/dev/null 2>&1; then
+			add_validation_error ".settings must be a map"
+		else
+			local s_unknown
+			s_unknown="$(yq -r '.settings | keys | map(select(. != "autohide" and . != "autohide_delay")) | .[]?' "$f" 2>/dev/null || true)"
+			if [[ -n "$s_unknown" ]]; then
+				add_validation_error "Unknown .settings key(s): ${s_unknown//$'\n'/, }"
+			fi
+
+			if yq -e '.settings.autohide? != null' "$f" >/dev/null 2>&1; then
+				if ! yq -e '.settings.autohide | type == "!!bool"' "$f" >/dev/null 2>&1; then
+					add_validation_error ".settings.autohide must be a boolean"
+				fi
+			fi
+
+			if yq -e '.settings.autohide_delay? != null' "$f" >/dev/null 2>&1; then
+				if ! yq -e '(.settings.autohide_delay | type == "!!int") or (.settings.autohide_delay | type == "!!float")' "$f" >/dev/null 2>&1; then
+					add_validation_error ".settings.autohide_delay must be a number"
+				elif ! yq -e '.settings.autohide_delay >= 0' "$f" >/dev/null 2>&1; then
+					add_validation_error ".settings.autohide_delay must be >= 0"
+				fi
+			fi
+		fi
+	fi
+
 	if ((${#VALIDATION_ERRORS[@]} == 0)); then
-		CONFIG_NORMALIZED_JSON="$(normalize_config_json "$f")"
+	CONFIG_NORMALIZED_JSON="$(normalize_config_json "$f")"
+	CONFIG_NORMALIZED_JSON="$(apply_settings_precision_json "$CONFIG_NORMALIZED_JSON")"
 	else
 		CONFIG_NORMALIZED_JSON=""
 	fi
@@ -139,7 +205,9 @@ load_yaml_config() {
 	local normalized="${CONFIG_NORMALIZED_JSON:-}"
 	if [[ -z "$normalized" ]]; then
 		normalized="$(normalize_config_json "$f")"
+		normalized="$(apply_settings_precision_json "$normalized")"
 	fi
+	CONFIG_NORMALIZED_JSON="$normalized"
 
 	local apps_out
 	apps_out="$(printf '%s' "$normalized" | yq -p=json -r '.apps[]?' 2>/dev/null || true)"
@@ -159,13 +227,19 @@ load_yaml_config() {
 	dl_preset="$dl_preset_raw"
 	dl_path="${dl_path_raw/#\~/$HOME}"
 	dl_section="$dl_section_raw"
-}
 
-build_preset_flags() {
-	case "$1" in
-	classic) echo "--view grid --display folder --sort dateadded" ;;
-	fan) echo "--view fan --display stack --sort dateadded" ;;
-	list) echo "--view list --display folder --sort name" ;;
-	*) echo "--view grid --display folder --sort dateadded" ;;
-	esac
+	local settings_autohide_raw settings_autohide_delay_raw
+	settings_autohide_raw="$(printf '%s' "$normalized" | yq -p=json -r '.settings.autohide' 2>/dev/null || echo "false")"
+	if [[ "$settings_autohide_raw" == "true" ]]; then
+		settings_autohide=true
+	else
+		settings_autohide=false
+	fi
+
+	settings_autohide_delay_raw="$(printf '%s' "$normalized" | yq -p=json -r '.settings.autohide_delay' 2>/dev/null || echo "0")"
+	if declare -F round_with_trim >/dev/null; then
+		settings_autohide_delay="$(round_with_trim "$settings_autohide_delay_raw" 2)"
+	else
+		settings_autohide_delay="$settings_autohide_delay_raw"
+	fi
 }

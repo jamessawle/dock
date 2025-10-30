@@ -69,6 +69,22 @@ dump_config() {
 		fi
 	fi
 
+	# Settings
+	local autohide_raw autohide_delay_raw autohide_value autohide_delay_value
+	autohide_raw="$(_pb "$plist" "autohide")"
+	autohide_delay_raw="$(_pb "$plist" "autohide-delay")"
+	autohide_value="false"
+	local autohide_lower
+	autohide_lower="$(printf '%s' "$autohide_raw" | tr '[:upper:]' '[:lower:]')"
+	case "$autohide_lower" in
+	true | 1) autohide_value="true" ;;
+	esac
+if [[ -n "$autohide_delay_raw" ]]; then
+	autohide_delay_value="$(round_with_trim "$autohide_delay_raw" 2)"
+else
+	autohide_delay_value="0"
+fi
+
 	# Emit YAML (strip defaults afterwards)
 	{
 		echo "apps:"
@@ -86,6 +102,9 @@ EOF
 		else
 			echo "downloads: off"
 		fi
+		echo "settings:"
+		printf '  autohide: %s\n' "$autohide_value"
+		printf '  autohide_delay: %s\n' "$autohide_delay_value"
 	} | strip_config_defaults_yaml
 }
 
