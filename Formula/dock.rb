@@ -8,7 +8,7 @@ class Dock < Formula
   license "MIT"
   head "https://github.com/jamessawle/dock.git", branch: "main"
 
-  depends_on "python@3.11"
+  depends_on "python@3.14"
   depends_on "dockutil"
 
   resource "click" do

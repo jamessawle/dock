@@ -1,7 +1,6 @@
 """CLI entry point for dock command."""
 
 import sys
-from typing import Optional
 
 import click
 
@@ -25,7 +24,7 @@ def cli() -> None:
 )
 @click.option("--profile", help="Profile name from ~/.config/dock/profiles/")
 @click.option("--dry-run", is_flag=True, help="Show changes without applying")
-def reset(file: Optional[str], profile: Optional[str], dry_run: bool) -> None:
+def reset(file: str | None, profile: str | None, dry_run: bool) -> None:
     """Apply dock configuration from file."""
     try:
         service = ResetService()
@@ -61,7 +60,7 @@ def show() -> None:
 @cli.command()
 @click.option("--file", "-f", type=click.Path(exists=True), help="Config file path")
 @click.option("--profile", help="Profile name from ~/.config/dock/profiles/")
-def validate(file: Optional[str], profile: Optional[str]) -> None:
+def validate(file: str | None, profile: str | None) -> None:
     """Validate configuration file."""
     try:
         service = ValidateService()

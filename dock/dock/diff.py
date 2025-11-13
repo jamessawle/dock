@@ -1,7 +1,7 @@
 """Dock diff calculator for comparing desired vs current state."""
 
 from dataclasses import dataclass
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from dock.config.models import DockConfig, DownloadsConfig, SettingsConfig
 
@@ -12,7 +12,7 @@ class AppChange:
 
     action: Literal["add", "remove", "reorder"]
     app_name: str
-    position: Optional[int] = None
+    position: int | None = None
 
 
 @dataclass
@@ -30,7 +30,7 @@ class DockDiff:
 
     app_changes: list[AppChange]
     setting_changes: list[SettingChange]
-    downloads_change: Union[Literal["off"], DownloadsConfig, None]
+    downloads_change: Literal["off"] | DownloadsConfig | None
 
     def has_changes(self) -> bool:
         """
@@ -134,7 +134,7 @@ class DiffCalculator:
 
     @staticmethod
     def _calculate_setting_changes(
-        desired_settings: "SettingsConfig", current_settings: "SettingsConfig"
+        desired_settings: SettingsConfig, current_settings: SettingsConfig
     ) -> list[SettingChange]:
         """
         Calculate setting changes.
@@ -172,9 +172,9 @@ class DiffCalculator:
 
     @staticmethod
     def _calculate_downloads_change(
-        desired_downloads: Union[Literal["off"], DownloadsConfig, None],
-        current_downloads: Union[Literal["off"], DownloadsConfig, None]
-    ) -> Union[Literal["off"], DownloadsConfig, None]:
+        desired_downloads: Literal["off"] | DownloadsConfig | None,
+        current_downloads: Literal["off"] | DownloadsConfig | None
+    ) -> Literal["off"] | DownloadsConfig | None:
         """
         Calculate downloads tile changes.
 

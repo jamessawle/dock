@@ -1,6 +1,6 @@
 """Pydantic models for dock configuration."""
 
-from typing import Literal, Union
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -30,7 +30,7 @@ class DockConfig(BaseModel):
     """Complete dock configuration."""
 
     apps: list[str] = Field(default_factory=list)
-    downloads: Union[Literal["off"], DownloadsConfig, None] = Field(
+    downloads: Literal["off"] | DownloadsConfig | None = Field(
         default_factory=lambda: DownloadsConfig()
     )
     settings: SettingsConfig = Field(default_factory=SettingsConfig)

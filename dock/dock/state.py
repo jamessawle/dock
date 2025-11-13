@@ -1,6 +1,5 @@
 """Dock state reader for reading current dock configuration."""
 
-from typing import Optional
 from urllib.parse import urlparse
 
 from dock.adapters.dockutil import DockutilCommand
@@ -46,7 +45,7 @@ class DockStateReader:
             autohide_delay=autohide_delay
         )
 
-    def read_current_downloads(self) -> Optional[DownloadsConfig]:
+    def read_current_downloads(self) -> DownloadsConfig | None:
         """
         Get current downloads tile configuration.
 

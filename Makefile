@@ -18,8 +18,7 @@ format:
 ci: lint type-check test
 
 completions:
-	uv run env _DOCK_COMPLETE=bash_source dock > completions/dock.bash
-	uv run env _DOCK_COMPLETE=zsh_source dock > completions/_dock
+	./scripts/generate-completions.sh
 
 clean:
 	rm -rf .pytest_cache

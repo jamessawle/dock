@@ -33,6 +33,9 @@ jobs:
       - name: Run tests
         run: uv run pytest tests/ -v
       
+      - name: Generate shell completions
+        run: ./scripts/generate-completions.sh
+      
       - name: Build distribution packages
         run: uv build
       

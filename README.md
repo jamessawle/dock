@@ -390,7 +390,7 @@ settings:
 ### Setup
 
 Requirements:
-- Python 3.9+
+- Python 3.14+
 - [uv](https://docs.astral.sh/uv/) (Python package manager)
 
 ```bash
@@ -426,7 +426,7 @@ make format
 # Run all CI checks (lint + type-check + test)
 make ci
 
-# Generate shell completions
+# Generate shell completions (automatically generated during release)
 make completions
 ```
 

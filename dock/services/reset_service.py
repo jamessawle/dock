@@ -1,7 +1,6 @@
 """Service for reset command business logic."""
 
 import sys
-from typing import Optional
 
 import click
 from pydantic import ValidationError
@@ -29,7 +28,7 @@ class ResetService:
     """Service for applying dock configuration."""
 
     def execute(
-        self, file_path: Optional[str], profile: Optional[str], dry_run: bool
+        self, file_path: str | None, profile: str | None, dry_run: bool
     ) -> None:
         """
         Execute the reset command.

@@ -1,6 +1,5 @@
 """Wrapper for dockutil commands."""
 
-from typing import Optional
 
 from dock.adapters import CommandExecutor, SubprocessExecutor
 
@@ -8,7 +7,7 @@ from dock.adapters import CommandExecutor, SubprocessExecutor
 class DockutilCommand:
     """Wrapper for dockutil commands."""
 
-    def __init__(self, executor: Optional[CommandExecutor] = None):
+    def __init__(self, executor: CommandExecutor | None = None):
         """
         Initialize DockutilCommand.
 
@@ -56,7 +55,7 @@ class DockutilCommand:
                         apps.append(app_name)
         return apps
 
-    def add_app(self, app_name: str, position: Optional[int] = None) -> None:
+    def add_app(self, app_name: str, position: int | None = None) -> None:
         """
         Add app to dock.
 

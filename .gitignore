@@ -138,3 +138,6 @@ uv.lock
 
 # macOS
 .DS_Store
+
+# Generated completions (generated during release)
+completions/

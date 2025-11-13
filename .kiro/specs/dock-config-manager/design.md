@@ -6,7 +6,7 @@ The `dock` tool is a Python-based CLI application that manages macOS Dock config
 
 ### Technology Stack
 
-- **Language**: Python 3.9+
+- **Language**: Python 3.14+
 - **Package Manager**: uv (for fast dependency management and Python version management)
 - **CLI Framework**: Click (provides command routing, option parsing, and help generation)
 - **YAML Parsing**: PyYAML (standard library for YAML handling)
@@ -651,7 +651,7 @@ version = "1.0.0"
 description = "Manage macOS Dock from YAML configuration"
 authors = [{name = "James Sawle"}]
 license = {text = "MIT"}
-requires-python = ">=3.9"
+requires-python = ">=3.14"
 dependencies = [
     "click>=8.0",
     "pyyaml>=6.0",
@@ -672,17 +672,17 @@ dev-dependencies = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py39"
+target-version = "py314"
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.14"
 strict = true
 ```
 
 ### .python-version
 
 ```
-3.11
+3.14
 ```
 
 ### Makefile
@@ -726,7 +726,7 @@ class Dock < Formula
   sha256 "..."
   license "MIT"
 
-  depends_on "python@3.11"
+  depends_on "python@3.14"
   depends_on "dockutil"
 
   resource "click" do

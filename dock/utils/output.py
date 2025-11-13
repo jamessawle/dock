@@ -92,7 +92,7 @@ def print_diff(diff: DockDiff, dry_run: bool = False) -> None:
             print_info(f"  Section: {diff.downloads_change.section}")
 
 
-def print_execution_plan(steps: list["ExecutionStep"], dry_run: bool = False) -> None:
+def print_execution_plan(steps: list[ExecutionStep], dry_run: bool = False) -> None:
     """
     Print execution plan showing actual commands that will be run.
 

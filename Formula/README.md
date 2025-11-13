@@ -12,6 +12,7 @@ git push origin v1.0.0
 ```
 
 GitHub Actions will handle:
+- Generating shell completions
 - Calculating the SHA256 hash
 - Updating the formula
 - Publishing to [jamessawle/homebrew-tap](https://github.com/jamessawle/homebrew-tap)
@@ -55,9 +56,9 @@ cp Formula/dock.rb /path/to/homebrew-tap/Formula/dock.rb
 
 The formula (`dock.rb`) includes:
 
-- **Dependencies**: Python 3.11 and dockutil
+- **Dependencies**: Python 3.14 and dockutil
 - **Python Resources**: All required packages (click, pyyaml, pydantic, etc.)
-- **Completions**: Pre-generated Bash and Zsh completions
+- **Completions**: Bash and Zsh completions (generated during release)
 - **Tests**: Verification that the tool installs and runs correctly
 
 ## Initial Setup (One-Time)

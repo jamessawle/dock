@@ -1,7 +1,7 @@
 """Dock executor for applying changes."""
 
 import subprocess
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from dock.adapters.dockutil import DockutilCommand
 from dock.adapters.plist import PlistManager
@@ -113,7 +113,7 @@ class DockExecutor:
                 self.plist.write_autohide_delay(change.new_value)
 
     def _apply_downloads_change(
-        self, downloads_change: Union[str, "DownloadsConfig"]
+        self, downloads_change: str | DownloadsConfig
     ) -> None:
         """
         Apply downloads tile changes.

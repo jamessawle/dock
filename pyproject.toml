@@ -8,7 +8,7 @@ version = "0.2.0"
 description = "Manage macOS Dock from YAML configuration"
 authors = [{name = "James Sawle"}]
 license = {text = "MIT"}
-requires-python = ">=3.9"
+requires-python = ">=3.14"
 dependencies = [
     "click>=8.0",
     "pyyaml>=6.0",
@@ -44,13 +44,13 @@ addopts = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py39"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.14"
 strict = true
 warn_return_any = true
 warn_unused_configs = true

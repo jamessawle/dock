@@ -1,7 +1,6 @@
 """Service for validate command business logic."""
 
 import sys
-from typing import Optional
 
 from pydantic import ValidationError
 
@@ -14,7 +13,7 @@ from dock.utils.output import print_error, print_info, print_success, print_warn
 class ValidateService:
     """Service for validating dock configuration."""
 
-    def execute(self, file_path: Optional[str], profile: Optional[str]) -> None:
+    def execute(self, file_path: str | None, profile: str | None) -> None:
         """
         Execute the validate command.
 

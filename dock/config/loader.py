@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 
@@ -12,8 +12,8 @@ class ConfigLoader:
 
     @staticmethod
     def discover_config_path(
-        file_path: Optional[str],
-        profile: Optional[str]
+        file_path: str | None,
+        profile: str | None
     ) -> Path:
         """
         Discover config file path using priority:
