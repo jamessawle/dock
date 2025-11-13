@@ -22,8 +22,8 @@ dock = "dock.cli:cli"
 [tool.hatch.build.targets.wheel]
 packages = ["dock"]
 
-[dependency-groups]
-dev = [
+[tool.uv]
+dev-dependencies = [
     "pytest>=7.0",
     "pytest-mock>=3.10",
     "mypy>=1.0",

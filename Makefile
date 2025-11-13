@@ -1,7 +1,7 @@
 .PHONY: install test lint type-check format ci completions clean formula-test formula-update
 
 install:
-	uv sync --group dev
+	uv sync
 
 test:
 	uv run pytest tests/ -v
