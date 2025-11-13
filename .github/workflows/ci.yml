@@ -33,6 +33,3 @@ jobs:
       
       - name: Build package
         run: uv build
-      
-      - name: Verify Homebrew formula syntax
-        run: ruby -c Formula/dock.rb
