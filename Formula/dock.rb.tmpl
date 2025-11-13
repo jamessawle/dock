@@ -1,0 +1,41 @@
+class Dock < Formula
+  include Language::Python::Virtualenv
+
+  desc "Manage macOS Dock from YAML configuration"
+  homepage "https://github.com/jamessawle/dock"
+  url "https://github.com/jamessawle/dock/archive/refs/tags/vPLACEHOLDER_VERSION_UPDATE_BEFORE_PUBLISHING.tar.gz"
+  sha256 "PLACEHOLDER_SHA256_UPDATE_BEFORE_PUBLISHING"
+  license "MIT"
+  head "https://github.com/jamessawle/dock.git", branch: "main"
+
+  depends_on "python@3.14"
+  depends_on "dockutil"
+
+  PLACEHOLDER_DEPENDENCIES_UPDATE_BEFORE_PUBLISHING
+
+  def install
+    virtualenv_install_with_resources
+
+    # Install shell completions
+    bash_completion.install "completions/dock.bash" => "dock"
+    zsh_completion.install "completions/_dock"
+  end
+
+  test do
+    # Test that the command is available and shows version
+    assert_match "version", shell_output("#{bin}/dock --version")
+    
+    # Test that the command shows help
+    assert_match "Manage macOS Dock", shell_output("#{bin}/dock --help")
+    
+    # Test validate command with a simple config
+    (testpath/"test-config.yml").write <<~EOS
+      apps:
+        - Safari
+      settings:
+        autohide: false
+    EOS
+    
+    assert_match "valid", shell_output("#{bin}/dock validate --file #{testpath}/test-config.yml")
+  end
+end
