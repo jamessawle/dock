@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-if [[ "${1:-}" == "--version" ]]; then
-	echo "dockutil 3.0.0"
-	exit 0
-fi
-printf "dockutil %s\n" "$*"
