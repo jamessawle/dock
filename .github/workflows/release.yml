@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v1
+        with:
+          enable-cache: true
+      
+      - name: Install dependencies
+        run: uv sync
+      
+      - name: Run linting
+        run: uv run ruff check dock/ tests/
+      
+      - name: Run type checking
+        run: uv run mypy dock/
+      
+      - name: Run tests
+        run: uv run pytest tests/ -v
+      
+      - name: Build distribution packages
+        run: uv build
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+      
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Wait for release tarball to be available
+        run: |
+          echo "Waiting for release tarball to be available..."
+          sleep 10
+          for i in {1..12}; do
+            if curl -f -I "https://github.com/${{ github.repository }}/archive/refs/tags/${{ github.ref_name }}.tar.gz" > /dev/null 2>&1; then
+              echo "Release tarball is available"
+              exit 0
+            fi
+            echo "Attempt $i: Tarball not yet available, waiting..."
+            sleep 5
+          done
+          echo "Warning: Tarball may not be available yet"
+      
+      - name: Calculate SHA256 for Homebrew formula
+        id: sha256
+        run: |
+          SHA256=$(curl -sL "https://github.com/${{ github.repository }}/archive/refs/tags/${{ github.ref_name }}.tar.gz" | shasum -a 256 | cut -d' ' -f1)
+          echo "SHA256=$SHA256"
+          echo "SHA256=$SHA256" >> $GITHUB_OUTPUT
+      
+      - name: Update Homebrew formula
+        run: |
+          sed -i.bak "s|url \".*\"|url \"https://github.com/${{ github.repository }}/archive/refs/tags/${{ github.ref_name }}.tar.gz\"|" Formula/dock.rb
+          sed -i.bak "s|sha256 \".*\"|sha256 \"${{ steps.sha256.outputs.SHA256 }}\"|" Formula/dock.rb
+          rm Formula/dock.rb.bak
+          cat Formula/dock.rb | grep -A 1 "url \""
+      
+      - name: Checkout homebrew-tap repository
+        uses: actions/checkout@v4
+        with:
+          repository: jamessawle/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+      
+      - name: Update formula in tap
+        run: |
+          mkdir -p homebrew-tap/Formula
+          cp Formula/dock.rb homebrew-tap/Formula/dock.rb
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/dock.rb
+          git diff --staged --quiet || git commit -m "dock: update to version ${{ steps.version.outputs.VERSION }}"
+          git push
