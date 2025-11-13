@@ -1,7 +1,7 @@
 .PHONY: install test lint type-check format ci completions clean formula-test formula-update
 
 install:
-	uv sync
+	uv sync --group dev
 
 test:
 	uv run pytest tests/ -v
@@ -28,14 +28,3 @@ clean:
 	rm -rf *.egg-info
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
-
-formula-test:
-	./scripts/test-formula.sh
-
-formula-update:
-	@echo "Usage: make formula-update VERSION=1.0.0"
-	@if [ -z "$(VERSION)" ]; then \
-		echo "Error: VERSION is required"; \
-		exit 1; \
-	fi
-	./scripts/update-formula.sh $(VERSION)
