@@ -1,156 +1,517 @@
-# dock — macOS Dock Manager
+# dock
 
-Minimal, predictable Dock management from a YAML config. Dry-run shows the exact `dockutil` commands that would run.
+A declarative macOS Dock configuration manager. Define your Dock setup in a YAML file and apply it consistently across machines.
 
-> **macOS only.** Requires `dockutil >= 3.0.0` and `yq >= 4.0.0`.
+## Features
 
-## Install
+- **Declarative Configuration**: Define your Dock apps and settings in a simple YAML file
+- **Version Control Friendly**: Keep your Dock configuration in Git alongside your dotfiles
+- **Idempotent**: Only makes changes when necessary to minimize Dock restarts
+- **Dry Run Mode**: Preview changes before applying them
+- **Backup & Restore**: Export your current Dock configuration to a file
+- **Profile Support**: Manage multiple Dock configurations for different contexts
+- **Shell Completions**: Bash and Zsh completion support included
 
-### Homebrew (recommended)
+## Installation
 
-    brew tap jamessawle/tap
-    brew install dock
-
-Homebrew installs Bash and Zsh completions automatically. Open a new shell (or run `compinit`) to pick them up.
-
-### Manual
-
-    # Dependencies
-    brew install dockutil yq
-
-    # Install the script
-    curl -fsSL https://raw.githubusercontent.com/jamessawle/dock/v0.1.0/dock -o /usr/local/bin/dock
-    chmod +x /usr/local/bin/dock
-
-Grab completions manually when not using Homebrew:
+### Via Homebrew (Recommended)
 
 ```bash
-# Bash
-curl -fsSL https://raw.githubusercontent.com/jamessawle/dock/main/completions/dock.bash -o /usr/local/etc/bash_completion.d/dock
-
-# Zsh
-curl -fsSL https://raw.githubusercontent.com/jamessawle/dock/main/completions/_dock -o ~/.zfunc/_dock
-echo 'fpath=(~/.zfunc $fpath)' >> ~/.zshrc   # once
+brew install jamessawle/tap/dock
 ```
 
-## Quick start
+This will automatically install `dockutil` as a dependency.
 
-Create a config:
+### From Source
 
-    # ~/.config/dock/config.yml
-    apps:
-      - Google Chrome
-      - "Visual Studio Code"
-      - "System Settings"
-    downloads:
-      preset: classic      # classic | fan | list
-      path: "~/Downloads"
-      section: others      # apps-left | apps-right | others
-    settings:
-      autohide: true       # true | false
-      autohide_delay: 0.15 # seconds; rounded to 2 decimals
+```bash
+git clone https://github.com/jamessawle/dock.git
+cd dock
+make install
+uv run dock --version
+```
 
-Then:
+## Quick Start
 
-    dock validate
-    dock --dry-run reset    # preview exact dockutil commands
-    dock reset              # apply changes
+1. Create a configuration file:
+
+```bash
+mkdir -p ~/.config/dock
+cat > ~/.config/dock/config.yml << 'EOF'
+apps:
+  - Safari
+  - Mail
+  - Calendar
+
+settings:
+  autohide: true
+  autohide_delay: 0.5
+EOF
+```
+
+2. Apply the configuration:
+
+```bash
+dock reset
+```
+
+3. Your Dock will now match the configuration!
+
+## Configuration File Format
+
+The configuration file uses YAML format with three main sections:
+
+### Complete Example
+
+```yaml
+apps:
+  - Google Chrome
+  - "Visual Studio Code"
+  - Terminal
+  - Slack
+  - "System Settings"
+
+downloads:
+  preset: fan        # Options: classic, fan, list
+  path: "~/Downloads"
+  section: others    # Options: apps-left, apps-right, others
+
+settings:
+  autohide: true
+  autohide_delay: 0.15  # Seconds, rounded to 2 decimals
+```
+
+### Apps Section
+
+List the applications you want in your Dock, in order:
+
+```yaml
+apps:
+  - Safari
+  - Mail
+  - "Visual Studio Code"  # Use quotes for names with spaces
+  - Terminal
+```
+
+- Apps are added in the order specified
+- Use the application name as it appears in `/Applications`
+- Quote names that contain spaces or special characters
+- Apps not in the list will be removed from the Dock
+
+### Downloads Section
+
+Configure the Downloads stack tile:
+
+```yaml
+downloads:
+  preset: fan           # Display style: classic, fan, or list
+  path: "~/Downloads"   # Path to the folder
+  section: others       # Position: apps-left, apps-right, or others
+```
+
+Or disable the Downloads tile entirely:
+
+```yaml
+downloads: off
+```
+
+If omitted, the Downloads tile is left unchanged.
+
+### Settings Section
+
+Configure Dock system preferences:
+
+```yaml
+settings:
+  autohide: true         # Auto-hide the Dock
+  autohide_delay: 0.15   # Delay before showing (seconds)
+```
+
+Both settings are optional and default to `false` and `0.0` respectively.
 
 ## Commands
 
-    reset     Reset Dock from a config file (or via discovery)
-    show      Print current Dock app names (apps section)
-    validate  Validate config and report any errors; no changes
-    backup    Write current Dock as YAML (requires --file)
+### `dock reset`
 
-### Common options
+Apply Dock configuration from a file.
 
-    --dry-run          Show what would be done without changes
-    --file, -f PATH    Config to use (reset/validate) or write (backup)
-    --profile NAME     Use ~/.config/dock/profiles/NAME.(yml|yaml) if --file not set
-    --version          Print version
-    -h, --help         Show help
+```bash
+# Use default config discovery
+dock reset
 
-## Config discovery
+# Use specific config file
+dock reset --file ~/my-dock.yml
 
-When `--file` isn’t provided, discovery checks—in order:
+# Use a profile
+dock reset --profile work
 
-1. `$DOCK_CONFIG` (if set and points to a file)  
-2. `--profile NAME` → `~/.config/dock/profiles/NAME.yml|yaml`  
-3. Standard locations:
-   - `~/.config/dock/config.yml|yaml`
-   - `/etc/dock/config.yml|yaml`
+# Preview changes without applying
+dock reset --dry-run
+```
 
-## Downloads tile
+**Options:**
+- `--file, -f PATH`: Path to configuration file
+- `--profile NAME`: Use profile from `~/.config/dock/profiles/NAME.yml`
+- `--dry-run`: Show what would change without applying
 
-Configure the “Downloads” stack or turn it off:
+### `dock backup`
 
-    downloads: off
-    # or
-    downloads:
-      preset: classic|fan|list
-      path: "~/Downloads"
-      section: apps-left|apps-right|others
+Export current Dock configuration to a file.
 
-## Dock visibility
+```bash
+# Backup to a file
+dock backup --file ~/my-dock-backup.yml
+```
 
-Manage the Dock’s visibility alongside the tile layout:
+**Options:**
+- `--file, -f PATH`: Output file path (required)
 
-    settings:
-      autohide: false        # toggle "Automatically hide and show the Dock"
-      autohide_delay: 0.2    # seconds before re-hiding (rounded to 2 decimals)
+The backup includes your current apps, downloads tile configuration, and settings. Default values are omitted to keep the output minimal.
 
-If `settings` is omitted we fall back to the defaults above (`autohide: false`, `autohide_delay: 0`). Defaults are stripped when you run `dock show` or `dock backup`, keeping configs tidy.
+### `dock show`
 
-## Examples
+Display current Dock applications.
 
-Preview then apply a profile:
+```bash
+dock show
+```
 
-    dock --profile work validate
-    dock --profile work --dry-run reset
-    dock --profile work reset
+Outputs a simple list of application names currently in your Dock.
 
-Backup current Dock to YAML:
+### `dock validate`
 
-    dock backup --file ~/.config/dock/snapshots/$(hostname)-dock.yml
+Validate a configuration file without applying changes.
 
-Show current Dock apps:
+```bash
+# Validate default config
+dock validate
 
-    dock show
+# Validate specific file
+dock validate --file ~/my-dock.yml
 
-## Development
+# Validate a profile
+dock validate --profile work
+```
 
-Install local Git hooks so commits run the full CI check:
+**Options:**
+- `--file, -f PATH`: Path to configuration file
+- `--profile NAME`: Validate profile from `~/.config/dock/profiles/NAME.yml`
 
-    make hooks
+Checks for:
+- Valid YAML syntax
+- Required fields present
+- Valid enum values
+- Duplicate app names
+- Path existence (for downloads)
 
-The pre-commit hook runs `make ci` and stops the commit if formatting, linting, or tests fail. Set `SKIP_MAKE_CI=1` when committing to bypass the check in exceptional cases.
+## Configuration Discovery
 
-## Requirements
+When you run `dock reset` or `dock validate` without `--file`, the tool searches for a configuration file in this order:
 
-- macOS
-- `dockutil >= 3.0.0` (Homebrew: `brew install dockutil`)
-- `yq >= 4.0.0` (Homebrew: `brew install yq`)
+1. `$DOCK_CONFIG` environment variable
+2. `--profile NAME` → `~/.config/dock/profiles/NAME.yml`
+3. `~/.config/dock/config.yml`
+4. `/etc/dock/config.yml`
 
-## Versioning & releases
+The first file found is used.
 
-Tag versions in the script repo:
+### Using Profiles
 
-    git tag v0.1.0
-    git push origin v0.1.0
+Profiles let you maintain multiple Dock configurations:
 
-Your Homebrew formula will point to the tag archive and a fixed `sha256`.
+```bash
+# Create profiles directory
+mkdir -p ~/.config/dock/profiles
+
+# Create work profile
+cat > ~/.config/dock/profiles/work.yml << 'EOF'
+apps:
+  - Slack
+  - "Microsoft Teams"
+  - "Visual Studio Code"
+settings:
+  autohide: false
+EOF
+
+# Create personal profile
+cat > ~/.config/dock/profiles/personal.yml << 'EOF'
+apps:
+  - Safari
+  - Mail
+  - Music
+settings:
+  autohide: true
+EOF
+
+# Switch between profiles
+dock reset --profile work
+dock reset --profile personal
+```
+
+### Environment Variable
+
+Set `DOCK_CONFIG` to always use a specific configuration:
+
+```bash
+export DOCK_CONFIG=~/dotfiles/dock.yml
+dock reset
+```
+
+Add to your shell profile (`~/.zshrc` or `~/.bashrc`) to make it permanent.
 
 ## Troubleshooting
 
-- **“dockutil missing” / “yq missing”** → `brew install dockutil yq`
-- **“dockutil >= 3.0.0 required”** → `brew upgrade dockutil`
-- **No config found** → pass `--file`, use `--profile`, or create `~/.config/dock/config.yml`
-- **Nothing happens** → try without `--dry-run`, or run `killall Dock`
+### "dockutil not found"
+
+The tool requires `dockutil` to manage Dock applications.
+
+**Solution:**
+```bash
+brew install dockutil
+```
+
+### "This tool requires macOS"
+
+The tool only works on macOS as it manages the macOS Dock.
+
+**Solution:** Run the tool on a macOS system.
+
+### "Application not found" warnings
+
+If an app name in your config doesn't match an installed application, you'll see a warning.
+
+**Solution:**
+- Check the exact name in `/Applications`
+- Use quotes for names with spaces: `"Visual Studio Code"`
+- Ensure the app is installed before running `dock reset`
+
+### Changes not taking effect
+
+The Dock should restart automatically after changes, but sometimes it needs a manual restart.
+
+**Solution:**
+```bash
+killall Dock
+```
+
+### Permission errors
+
+If you get permission errors when modifying the Dock plist:
+
+**Solution:**
+- Ensure you're running as your user (not root)
+- Check that `~/Library/Preferences/com.apple.dock.plist` is writable
+- Try: `chmod 644 ~/Library/Preferences/com.apple.dock.plist`
+
+### Configuration validation fails
+
+Use `dock validate` to check your configuration for errors:
+
+```bash
+dock validate --file ~/my-dock.yml
+```
+
+Common issues:
+- Invalid YAML syntax (check indentation)
+- Invalid enum values (check preset, section options)
+- Duplicate app names
+- Missing required fields
+
+### Dry run shows unexpected changes
+
+Use `--dry-run` to preview changes before applying:
+
+```bash
+dock reset --dry-run
+```
+
+This helps you verify the configuration will do what you expect.
+
+## Examples
+
+### Minimal Configuration
+
+Just set the apps, use defaults for everything else:
+
+```yaml
+apps:
+  - Safari
+  - Mail
+  - Calendar
+```
+
+### Auto-hide Dock with Fast Reveal
+
+```yaml
+apps:
+  - Safari
+  - Terminal
+
+settings:
+  autohide: true
+  autohide_delay: 0.0  # Instant reveal
+```
+
+### Work Setup with Downloads Tile
+
+```yaml
+apps:
+  - Slack
+  - "Microsoft Teams"
+  - "Visual Studio Code"
+  - Terminal
+  - "Google Chrome"
+
+downloads:
+  preset: list
+  path: "~/Downloads"
+  section: others
+
+settings:
+  autohide: false
+```
+
+### Minimal Dock (No Downloads Tile)
+
+```yaml
+apps:
+  - Safari
+  - Terminal
+
+downloads: off
+
+settings:
+  autohide: true
+  autohide_delay: 0.5
+```
+
+## Development
+
+### Setup
+
+Requirements:
+- Python 3.14+
+- [uv](https://docs.astral.sh/uv/) (Python package manager)
+
+```bash
+# Clone the repository
+git clone https://github.com/jamessawle/dock.git
+cd dock
+
+# Install dependencies
+make install
+
+# Run the tool in development
+uv run dock --version
+```
+
+### Development Commands
+
+```bash
+# Install dependencies
+make install
+
+# Run tests
+make test
+
+# Run linting
+make lint
+
+# Run type checking
+make type-check
+
+# Format code
+make format
+
+# Run all CI checks (lint + type-check + test)
+make ci
+
+# Generate shell completions (automatically generated during release)
+make completions
+```
+
+### Project Structure
+
+```
+dock/
+├── dock/                    # Source code
+│   ├── cli.py              # CLI commands
+│   ├── config/             # Configuration loading and validation
+│   ├── dock/               # Dock state and execution
+│   ├── adapters/           # External command wrappers
+│   ├── services/           # High-level service layer
+│   └── utils/              # Utilities
+├── tests/                   # Test suite
+├── Formula/                 # Homebrew formula
+├── completions/            # Shell completions
+└── pyproject.toml          # Project configuration
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+make test
+
+# Run specific test file
+uv run pytest tests/config/test_loader.py -v
+
+# Run with coverage
+uv run pytest --cov=dock tests/
+```
+
+### Code Quality
+
+The project uses:
+- **ruff**: Fast Python linter and formatter
+- **mypy**: Static type checking
+- **pytest**: Testing framework
+
+All checks run automatically in CI on pull requests.
+
+## Homebrew Formula
+
+The Homebrew formula is located in `Formula/dock.rb` and automatically published to [jamessawle/homebrew-tap](https://github.com/jamessawle/homebrew-tap).
+
+### Releasing a New Version
+
+The formula is automatically updated when you push a version tag:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+GitHub Actions will:
+- Run all CI checks
+- Create a GitHub release
+- Update the Homebrew formula with the new version
+- Push the updated formula to the tap repository
+
+### Testing the Formula Locally
+
+```bash
+# Test the formula before releasing
+./scripts/test-formula.sh
+
+# Or manually
+brew install --build-from-source ./Formula/dock.rb
+brew test dock
+brew uninstall dock
+```
+
+See [Formula/PUBLISHING_CHECKLIST.md](Formula/PUBLISHING_CHECKLIST.md) for the complete release checklist.
+
+## Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run `make ci` to ensure all checks pass
+5. Submit a pull request
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).  
-Add an SPDX header to the script if you like:
-
-    # SPDX-License-Identifier: MIT
+MIT

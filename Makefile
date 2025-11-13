@@ -1,39 +1,30 @@
-# Makefile for dock project (classic tab style)
-SHELL := /usr/bin/env bash
-.DEFAULT_GOAL := help
+.PHONY: install test lint type-check format ci completions clean formula-test formula-update
 
-BATS       ?= bats
-SHELLCHECK ?= shellcheck
-SHFMT      ?= shfmt
-YQ         ?= yq
-TESTS_BIN  := $(CURDIR)/tests/bin
+install:
+	uv sync
 
-help: ## Show this help
-	@awk 'BEGIN {FS":.*##"; printf "\nTargets:\n"} /^[a-zA-Z0-9_.-]+:.*##/ {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' "$(MAKEFILE_LIST)" ; echo
+test:
+	uv run pytest tests/ -v
 
-install: ## Install dev tools
-	brew list --versions bats-core >/dev/null 2>&1 || brew install bats-core
-	brew list --versions shellcheck >/dev/null 2>&1 || brew install shellcheck
-	brew list --versions shfmt >/dev/null 2>&1 || brew install shfmt
-	brew list --versions yq >/dev/null 2>&1 || brew install yq
+lint:
+	uv run ruff check dock/ tests/
 
-lint: ## Run shellcheck
-	$(SHELLCHECK) -x ./dock
+type-check:
+	uv run mypy dock/
 
-fmt: ## Apply shfmt formatting
-	$(SHFMT) -w .
+format:
+	uv run ruff format dock/ tests/
 
-fmt-check: ## Check formatting
-	$(SHFMT) -d .
+ci: lint type-check test
 
-test: ## Run bats tests
-	chmod +x $(TESTS_BIN)/* || true
-	PATH="$(TESTS_BIN):$$PATH" $(BATS) tests/bats
+completions:
+	./scripts/generate-completions.sh
 
-ci: install lint fmt-check test ## Full CI pipeline
-	echo "All checks passed ✅"
-
-hooks: ## Configure git hooks to run make ci on commit
-	git config core.hooksPath .githooks
-
-.PHONY: help install lint fmt fmt-check test ci hooks
+clean:
+	rm -rf .pytest_cache
+	rm -rf .mypy_cache
+	rm -rf .ruff_cache
+	rm -rf dist
+	rm -rf *.egg-info
+	find . -type d -name __pycache__ -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete

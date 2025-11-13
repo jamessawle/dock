@@ -3,28 +3,36 @@ name: CI
 on:
   push:
     branches:
-      - '**'        # all branches
-    tags-ignore:
-      - '*'         # ignore all tag pushes
+      - main
   pull_request:
 
-permissions:
-  contents: read
-
 jobs:
-  macos:
+  test:
     runs-on: macos-latest
-    env:
-      HOMEBREW_NO_INSTALL_CLEANUP: "1"
-      HOMEBREW_NO_ENV_HINTS: "1"
-      # Keep brew quiet & noninteractive
-      HOMEBREW_NO_AUTO_UPDATE: "1"
-      CI: "true"
+    
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Homebrew quick update (one-shot)
-        run: brew update || true
-
-      - name: Run CI via Makefile (install → lint → fmt-check → test)
-        run: make ci
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      
+      - name: Install dependencies
+        run: uv sync
+      
+      - name: Run linting
+        run: make lint
+      
+      - name: Run type checking
+        run: make type-check
+      
+      - name: Run tests
+        run: make test
+      
+      - name: Build package
+        run: uv build
+      
+      - name: Verify Homebrew formula syntax
+        run: ruby -c Formula/dock.rb
