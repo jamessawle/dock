@@ -68,6 +68,23 @@ jobs:
           cd homebrew-tap
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          BRANCH_NAME="update-dock-${{ steps.version.outputs.VERSION }}"
+          git checkout -b "$BRANCH_NAME"
+          
           git add Formula/dock.rb
           git diff --staged --quiet || git commit -m "dock: update to version ${{ steps.version.outputs.VERSION }}"
-          git push
+          git push origin "$BRANCH_NAME"
+      
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.TAP_PUSH_TOKEN }}
+          path: homebrew-tap
+          branch: update-dock-${{ steps.version.outputs.VERSION }}
+          title: "dock: update to version ${{ steps.version.outputs.VERSION }}"
+          body: |
+            Automated update of dock formula to version ${{ steps.version.outputs.VERSION }}
+            
+            Release: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.VERSION }}
+          commit-message: "dock: update to version ${{ steps.version.outputs.VERSION }}"
