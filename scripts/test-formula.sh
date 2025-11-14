@@ -97,20 +97,8 @@ echo ""
 
 # Step 5: Install from local tap
 echo_step "Installing formula from local tap..."
-# Install and capture output, ignoring linkage warnings
-set +e
-INSTALL_OUTPUT=$(brew install "${TAP_FULL_NAME}/${FORMULA_NAME}" 2>&1)
-INSTALL_EXIT=$?
-set -e
-
-# Check if installation succeeded (exit code 0 or just linkage warning)
-if [ $INSTALL_EXIT -eq 0 ] || echo "$INSTALL_OUTPUT" | grep -q "built in"; then
-    echo "  Installation completed"
-else
-    echo "$INSTALL_OUTPUT"
-    echo_error "Installation failed"
-    exit 1
-fi
+# Install and show output in real-time
+brew install "${TAP_FULL_NAME}/${FORMULA_NAME}"
 echo ""
 
 # Step 5a: Force link the test formula (may conflict with production dock)
