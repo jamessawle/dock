@@ -1,7 +1,11 @@
-.PHONY: install test lint type-check format ci formula-test clean
+.PHONY: install audit test lint type-check format ci formula-test clean
 
 install:
 	uv sync
+
+audit:
+	uv export --group dev --no-emit-project > requirements.txt
+	UV_PYTHON=$$(which python3) uvx pip-audit -r requirements.txt
 
 test:
 	uv run pytest tests/ -v

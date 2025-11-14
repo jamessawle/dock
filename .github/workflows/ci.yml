@@ -34,6 +34,9 @@ jobs:
       - name: Run tests
         run: make test
       
+      - name: Audit dependencies
+        run: make audit
+      
       - name: Build package
         run: uv build
 
