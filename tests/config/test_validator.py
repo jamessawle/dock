@@ -68,14 +68,18 @@ class TestConfigValidator:
 
     def test_validate_config_downloads_path_not_exists(self, tmp_path):
         """Test that non-existent downloads path generates warning."""
+        from dock.config.converter import converter
         from dock.config.models import DockConfig
         from dock.config.validator import ConfigValidator
 
         nonexistent_path = tmp_path / "NonexistentFolder"
 
-        config = DockConfig(
-            apps=["Safari"],
-            downloads={"preset": "classic", "path": str(nonexistent_path)}
+        config = converter.structure(
+            {
+                "apps": ["Safari"],
+                "downloads": {"preset": "classic", "path": str(nonexistent_path)},
+            },
+            DockConfig,
         )
 
         warnings = ConfigValidator.validate_config(config)
@@ -141,14 +145,18 @@ class TestConfigValidator:
 
     def test_validate_config_combined_warnings(self, tmp_path):
         """Test that multiple validation issues generate multiple warnings."""
+        from dock.config.converter import converter
         from dock.config.models import DockConfig
         from dock.config.validator import ConfigValidator
 
         nonexistent_path = tmp_path / "NonexistentFolder"
 
-        config = DockConfig(
-            apps=["Safari", "Mail", "Safari"],
-            downloads={"preset": "classic", "path": str(nonexistent_path)}
+        config = converter.structure(
+            {
+                "apps": ["Safari", "Mail", "Safari"],
+                "downloads": {"preset": "classic", "path": str(nonexistent_path)},
+            },
+            DockConfig,
         )
 
         warnings = ConfigValidator.validate_config(config)

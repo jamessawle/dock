@@ -1,7 +1,6 @@
-"""Tests for Pydantic configuration models."""
+"""Tests for configuration models."""
 
 import pytest
-from pydantic import ValidationError
 
 
 class TestSettingsConfig:
@@ -37,14 +36,14 @@ class TestSettingsConfig:
         """Test that negative autohide_delay is invalid."""
         from dock.config.models import SettingsConfig
 
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             SettingsConfig(autohide_delay=-0.5)
 
     def test_autohide_invalid_type(self):
         """Test that invalid autohide type raises error."""
         from dock.config.models import SettingsConfig
 
-        with pytest.raises(ValidationError):
+        with pytest.raises(TypeError):
             SettingsConfig(autohide="not a boolean")
 
 
@@ -83,10 +82,11 @@ class TestDownloadsConfig:
 
     def test_downloads_preset_invalid_value(self):
         """Test that invalid preset value raises error."""
+        from dock.config.converter import converter
         from dock.config.models import DownloadsConfig
 
-        with pytest.raises(ValidationError):
-            DownloadsConfig(preset="invalid")
+        with pytest.raises(Exception):  # cattrs raises various exceptions for invalid literals
+            converter.structure({"preset": "invalid"}, DownloadsConfig)
 
     def test_downloads_section_valid_values(self):
         """Test that all valid section values are accepted."""
@@ -98,10 +98,11 @@ class TestDownloadsConfig:
 
     def test_downloads_section_invalid_value(self):
         """Test that invalid section value raises error."""
+        from dock.config.converter import converter
         from dock.config.models import DownloadsConfig
 
-        with pytest.raises(ValidationError):
-            DownloadsConfig(preset="classic", section="invalid")
+        with pytest.raises(Exception):  # cattrs raises various exceptions for invalid literals
+            converter.structure({"preset": "classic", "section": "invalid"}, DownloadsConfig)
 
 
 class TestDockConfig:
@@ -139,9 +140,12 @@ class TestDockConfig:
 
     def test_dock_config_with_downloads_dict(self):
         """Test DockConfig with downloads as dict."""
+        from dock.config.converter import converter
         from dock.config.models import DockConfig
 
-        config = DockConfig(downloads={"preset": "list", "path": "~/Desktop"})
+        config = converter.structure(
+            {"downloads": {"preset": "list", "path": "~/Desktop"}}, DockConfig
+        )
         assert config.downloads.preset == "list"
         assert config.downloads.path == "~/Desktop"
 
@@ -154,22 +158,27 @@ class TestDockConfig:
 
     def test_dock_config_with_settings(self):
         """Test DockConfig with settings configuration."""
+        from dock.config.converter import converter
         from dock.config.models import DockConfig
 
-        config = DockConfig(
-            settings={"autohide": True, "autohide_delay": 0.25}
+        config = converter.structure(
+            {"settings": {"autohide": True, "autohide_delay": 0.25}}, DockConfig
         )
         assert config.settings.autohide is True
         assert config.settings.autohide_delay == 0.25
 
     def test_dock_config_complete(self):
         """Test DockConfig with all fields."""
+        from dock.config.converter import converter
         from dock.config.models import DockConfig
 
-        config = DockConfig(
-            apps=["Safari", "Mail"],
-            downloads={"preset": "classic", "path": "~/Downloads"},
-            settings={"autohide": True, "autohide_delay": 0.15}
+        config = converter.structure(
+            {
+                "apps": ["Safari", "Mail"],
+                "downloads": {"preset": "classic", "path": "~/Downloads"},
+                "settings": {"autohide": True, "autohide_delay": 0.15},
+            },
+            DockConfig,
         )
         assert len(config.apps) == 2
         assert config.downloads.preset == "classic"
@@ -178,14 +187,16 @@ class TestDockConfig:
 
     def test_dock_config_invalid_apps_type(self):
         """Test that invalid apps type raises error."""
+        from dock.config.converter import converter
         from dock.config.models import DockConfig
 
-        with pytest.raises(ValidationError):
-            DockConfig(apps="not a list")
+        with pytest.raises(Exception):
+            converter.structure({"apps": "not a list"}, DockConfig)
 
     def test_dock_config_invalid_downloads_type(self):
         """Test that invalid downloads type raises error."""
+        from dock.config.converter import converter
         from dock.config.models import DockConfig
 
-        with pytest.raises(ValidationError):
-            DockConfig(downloads=123)
+        with pytest.raises(Exception):
+            converter.structure({"downloads": 123}, DockConfig)

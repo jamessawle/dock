@@ -31,7 +31,7 @@ class TestResetService:
         """Mock all external dependencies."""
         with patch("dock.services.reset_service.require_macos"), \
              patch("dock.services.reset_service.ConfigLoader") as mock_loader, \
-             patch("dock.services.reset_service.DockConfig") as mock_config, \
+             patch("dock.services.reset_service.converter") as mock_converter, \
              patch("dock.services.reset_service.ConfigValidator") as mock_validator, \
              patch("dock.services.reset_service.DockStateReader") as mock_state_reader, \
              patch("dock.services.reset_service.DiffCalculator") as mock_diff_calc, \
@@ -56,7 +56,7 @@ class TestResetService:
 
             mock_config_instance = Mock(spec=DockConfig)
             mock_config_instance.apps = ["Safari", "Mail"]
-            mock_config.model_validate.return_value = mock_config_instance
+            mock_converter.structure.return_value = mock_config_instance
 
             mock_validator_instance = Mock()
             mock_validator.return_value = mock_validator_instance
@@ -88,7 +88,7 @@ class TestResetService:
 
             yield {
                 "loader": mock_loader,
-                "config": mock_config,
+                "converter": mock_converter,
                 "validator": mock_validator,
                 "state_reader": mock_state_reader,
                 "diff_calc": mock_diff_calc,
