@@ -67,15 +67,17 @@ echo_step "Building package..."
 uv build
 echo ""
 
-# Step 2: Generate completions
-echo_step "Generating completions..."
-./scripts/generate-completions.sh
-echo ""
-
-# Step 3: Update formula for local testing
+# Step 2: Update formula for local testing
 echo_step "Generating formula for local testing..."
 ./scripts/update-formula.sh --local
 echo ""
+
+# Step 3: Unlink production dock if installed
+if brew list dock &>/dev/null 2>&1; then
+    echo_step "Unlinking production dock to avoid conflicts..."
+    brew unlink dock || true
+    echo ""
+fi
 
 # Step 4: Create temporary tap
 echo_step "Setting up temporary tap: ${TAP_FULL_NAME}"
@@ -101,18 +103,17 @@ echo_step "Installing formula from local tap..."
 brew install "${TAP_FULL_NAME}/${FORMULA_NAME}"
 echo ""
 
-# Step 5a: Force link the test formula (may conflict with production dock)
+# Step 6: Link the test formula
 echo_step "Linking test formula..."
-if brew link --overwrite "${FORMULA_NAME}" 2>&1 | grep -q "already linked"; then
-    echo "  Already linked"
-elif brew link --overwrite "${FORMULA_NAME}"; then
+if brew link "${FORMULA_NAME}"; then
     echo "  Linked successfully"
 else
-    echo_warning "Link failed, but continuing with tests"
+    echo_error "Link failed"
+    exit 1
 fi
 echo ""
 
-# Step 6: Run brew audit
+# Step 7: Run brew audit
 echo_step "Running brew audit..."
 if brew audit --strict "${TAP_FULL_NAME}/${FORMULA_NAME}"; then
     echo -e "${GREEN}✓${NC} Audit passed"
@@ -122,7 +123,7 @@ else
 fi
 echo ""
 
-# Step 7: Run brew test
+# Step 8: Run brew test
 echo_step "Running brew test..."
 if brew test "${TAP_FULL_NAME}/${FORMULA_NAME}"; then
     echo -e "${GREEN}✓${NC} Tests passed"
@@ -132,7 +133,7 @@ else
 fi
 echo ""
 
-# Step 8: Verify installation
+# Step 9: Verify installation
 echo_step "Verifying installation..."
 if command -v dock &>/dev/null; then
     echo "  dock command is available"

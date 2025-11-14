@@ -1,4 +1,4 @@
-.PHONY: install test lint type-check format ci completions clean formula-test
+.PHONY: install test lint type-check format ci formula-test clean
 
 install:
 	uv sync
@@ -16,9 +16,6 @@ format:
 	uv run ruff format dock/ tests/
 
 ci: lint type-check test
-
-completions:
-	./scripts/generate-completions.sh
 
 formula-test:
 	./scripts/test-formula.sh

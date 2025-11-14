@@ -18,9 +18,26 @@ class Dock < Formula
   def install
     virtualenv_install_with_resources
 
-    # Install shell completions
-    bash_completion.install "completions/dock.bash" => "dock"
-    zsh_completion.install "completions/_dock"
+    # Generate shell completions using Click
+    # Click requires environment variables to generate completions
+    # We need to create wrapper scripts that set the env var
+    (buildpath/"generate-bash-completion.sh").write <<~EOS
+      #!/bin/bash
+      _DOCK_COMPLETE=bash_source #{bin}/dock
+    EOS
+
+    (buildpath/"generate-zsh-completion.sh").write <<~EOS
+      #!/bin/zsh
+      _DOCK_COMPLETE=zsh_source #{bin}/dock
+    EOS
+
+    chmod 0755, buildpath/"generate-bash-completion.sh"
+    chmod 0755, buildpath/"generate-zsh-completion.sh"
+
+    generate_completions_from_executable(buildpath/"generate-bash-completion.sh",
+                                         shells: [:bash], base_name: "dock")
+    generate_completions_from_executable(buildpath/"generate-zsh-completion.sh",
+                                         shells: [:zsh], base_name: "dock")
   end
 
   test do
@@ -39,5 +56,13 @@ class Dock < Formula
     EOS
 
     assert_match "valid", shell_output("#{bin}/dock validate --file #{testpath}/test-config.yml")
+
+    # Test that shell completions were installed
+    assert_path_exists bash_completion/"dock"
+    assert_path_exists zsh_completion/"_dock"
+
+    # Test that completions contain expected content
+    assert_match "dock", (bash_completion/"dock").read
+    assert_match "dock", (zsh_completion/"_dock").read
   end
 end

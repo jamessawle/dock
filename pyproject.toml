@@ -26,12 +26,8 @@ packages = ["dock"]
 [tool.hatch.build.targets.sdist]
 include = [
     "dock/",
-    "scripts/generate-completions.sh",
     "README.md",
     "LICENSE",
-]
-artifacts = [
-    "completions/*",
 ]
 
 [dependency-groups]
