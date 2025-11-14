@@ -33,3 +33,6 @@ jobs:
       
       - name: Build package
         run: uv build
+
+      - name: Test Homebrew formula
+        run: make formula-test

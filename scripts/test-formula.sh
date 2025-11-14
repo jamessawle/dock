@@ -14,6 +14,7 @@ TAP_NAME="test-dock"
 TAP_USER="local"
 TAP_FULL_NAME="${TAP_USER}/${TAP_NAME}"
 TAP_PATH="$(brew --repository)/Library/Taps/${TAP_USER}/homebrew-${TAP_NAME}"
+FORMULA_NAME="dock-test"
 
 echo_step() {
     echo -e "${GREEN}==>${NC} $1"
@@ -30,10 +31,19 @@ echo_warning() {
 cleanup() {
     echo_step "Cleaning up..."
     
-    # Uninstall formula if installed
-    if brew list dock &>/dev/null; then
-        echo "  Uninstalling dock..."
-        brew uninstall dock || true
+    # Unlink test formula if linked
+    if brew list "$FORMULA_NAME" &>/dev/null; then
+        echo "  Unlinking ${FORMULA_NAME}..."
+        brew unlink "$FORMULA_NAME" 2>/dev/null || true
+        
+        echo "  Uninstalling ${FORMULA_NAME}..."
+        brew uninstall "$FORMULA_NAME" || true
+    fi
+    
+    # Relink production dock if it exists
+    if brew list dock &>/dev/null 2>&1; then
+        echo "  Relinking production dock..."
+        brew link dock 2>/dev/null || true
     fi
     
     # Remove tap if it exists
@@ -49,31 +59,25 @@ cleanup() {
 trap cleanup EXIT
 
 echo_step "Starting local Homebrew formula test"
+echo "  Testing as: ${FORMULA_NAME}"
 echo ""
 
-# Step 1: Uninstall existing dock formula if present
-if brew list dock &>/dev/null; then
-    echo_step "Uninstalling existing dock formula..."
-    brew uninstall dock
-    echo ""
-fi
-
-# Step 2: Build the package
+# Step 1: Build the package
 echo_step "Building package..."
 uv build
 echo ""
 
-# Step 3: Generate completions
+# Step 2: Generate completions
 echo_step "Generating completions..."
 ./scripts/generate-completions.sh
 echo ""
 
-# Step 4: Update formula for local testing
+# Step 3: Update formula for local testing
 echo_step "Generating formula for local testing..."
 ./scripts/update-formula.sh --local
 echo ""
 
-# Step 5: Create temporary tap
+# Step 4: Create temporary tap
 echo_step "Setting up temporary tap: ${TAP_FULL_NAME}"
 if [ -d "$TAP_PATH" ]; then
     echo_warning "Tap already exists, removing it first..."
@@ -83,16 +87,19 @@ fi
 mkdir -p "$TAP_PATH"
 echo "  Created tap directory: $TAP_PATH"
 
-# Copy formula to tap
-cp Formula/dock.rb "$TAP_PATH/dock.rb"
-echo "  Copied formula to tap"
+# Copy formula to tap and rename class
+cp Formula/dock.rb "$TAP_PATH/${FORMULA_NAME}.rb"
+# Update the class name in the formula
+sed -i.bak "s/class Dock </class DockTest </" "$TAP_PATH/${FORMULA_NAME}.rb"
+rm "$TAP_PATH/${FORMULA_NAME}.rb.bak"
+echo "  Copied formula to tap as ${FORMULA_NAME}.rb"
 echo ""
 
-# Step 6: Install from local tap
+# Step 5: Install from local tap
 echo_step "Installing formula from local tap..."
 # Install and capture output, ignoring linkage warnings
 set +e
-INSTALL_OUTPUT=$(brew install "${TAP_FULL_NAME}/dock" 2>&1)
+INSTALL_OUTPUT=$(brew install "${TAP_FULL_NAME}/${FORMULA_NAME}" 2>&1)
 INSTALL_EXIT=$?
 set -e
 
@@ -106,9 +113,20 @@ else
 fi
 echo ""
 
-# Step 7: Run brew audit
+# Step 5a: Force link the test formula (may conflict with production dock)
+echo_step "Linking test formula..."
+if brew link --overwrite "${FORMULA_NAME}" 2>&1 | grep -q "already linked"; then
+    echo "  Already linked"
+elif brew link --overwrite "${FORMULA_NAME}"; then
+    echo "  Linked successfully"
+else
+    echo_warning "Link failed, but continuing with tests"
+fi
+echo ""
+
+# Step 6: Run brew audit
 echo_step "Running brew audit..."
-if brew audit --strict "${TAP_FULL_NAME}/dock"; then
+if brew audit --strict "${TAP_FULL_NAME}/${FORMULA_NAME}"; then
     echo -e "${GREEN}✓${NC} Audit passed"
 else
     echo_error "Audit failed"
@@ -116,9 +134,9 @@ else
 fi
 echo ""
 
-# Step 8: Run brew test
+# Step 7: Run brew test
 echo_step "Running brew test..."
-if brew test "${TAP_FULL_NAME}/dock"; then
+if brew test "${TAP_FULL_NAME}/${FORMULA_NAME}"; then
     echo -e "${GREEN}✓${NC} Tests passed"
 else
     echo_error "Tests failed"
@@ -126,7 +144,7 @@ else
 fi
 echo ""
 
-# Step 9: Verify installation
+# Step 8: Verify installation
 echo_step "Verifying installation..."
 if command -v dock &>/dev/null; then
     echo "  dock command is available"
