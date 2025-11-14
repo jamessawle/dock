@@ -22,6 +22,18 @@ dock = "dock.cli:cli"
 [tool.hatch.build.targets.wheel]
 packages = ["dock"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+    "dock/",
+    "completions/",
+    "scripts/generate-completions.sh",
+    "README.md",
+    "LICENSE",
+]
+
+[tool.hatch.build.force-include]
+"completions" = "completions"
+
 [dependency-groups]
 dev = [
     "pytest>=7.0",

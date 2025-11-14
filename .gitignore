@@ -139,5 +139,8 @@ uv.lock
 # macOS
 .DS_Store
 
+# Formula
+Formula/dock.rb
+
 # Generated completions (generated during release)
 completions/

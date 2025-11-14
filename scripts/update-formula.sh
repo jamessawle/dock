@@ -5,8 +5,11 @@ set -e
 
 # Parse arguments
 RELEASE_MODE=false
+LOCAL_MODE=false
 if [[ "$1" == "--release" ]]; then
     RELEASE_MODE=true
+elif [[ "$1" == "--local" ]]; then
+    LOCAL_MODE=true
 fi
 
 echo "==> Generating Homebrew formula from template..."
@@ -15,7 +18,25 @@ echo "==> Generating Homebrew formula from template..."
 VERSION=$(grep '^version = ' pyproject.toml | cut -d'"' -f2)
 echo "Version: $VERSION"
 
-if [ "$RELEASE_MODE" = true ]; then
+if [ "$LOCAL_MODE" = true ]; then
+    # Local testing mode: build and use local tarball with file:// URL
+    echo "Local testing mode: Building package for local testing..."
+    uv build
+    
+    # Get the tarball path and calculate SHA256
+    TARBALL_PATH="dist/dock_cli-${VERSION}.tar.gz"
+    if [ ! -f "$TARBALL_PATH" ]; then
+        echo "Error: Tarball not found at $TARBALL_PATH"
+        exit 1
+    fi
+    
+    SHA256=$(shasum -a 256 "$TARBALL_PATH" | cut -d' ' -f1)
+    echo "SHA256: $SHA256"
+    
+    # Get absolute path for file:// URL
+    TARBALL_ABSOLUTE_PATH="$(cd "$(dirname "$TARBALL_PATH")" && pwd)/$(basename "$TARBALL_PATH")"
+    echo "Local tarball: $TARBALL_ABSOLUTE_PATH"
+elif [ "$RELEASE_MODE" = true ]; then
     # Release mode: use GitHub release tarball
     echo "Release mode: Using GitHub release tarball"
     TARBALL_URL="https://github.com/jamessawle/dock/archive/refs/tags/v${VERSION}.tar.gz"
@@ -35,8 +56,8 @@ if [ "$RELEASE_MODE" = true ]; then
     SHA256=$(curl -sL "$TARBALL_URL" | shasum -a 256 | cut -d' ' -f1)
     echo "SHA256: $SHA256"
 else
-    # Local mode: build and use local tarball
-    echo "Local mode: Building package..."
+    # Default mode: build and use local tarball
+    echo "Default mode: Building package..."
     uv build
     
     # Get the tarball path and calculate SHA256
@@ -143,9 +164,24 @@ echo "Found $(echo "$RESOURCES" | grep -c 'resource') dependencies"
 # Copy template to Formula/dock.rb
 cp Formula/dock.rb.tmpl Formula/dock.rb
 
+# Get current directory for local mode
+REPO_PATH="$(pwd)"
+
 # Replace placeholders
 sed -i.bak "s/PLACEHOLDER_VERSION_UPDATE_BEFORE_PUBLISHING/${VERSION}/g" Formula/dock.rb
-sed -i.bak "s/PLACEHOLDER_SHA256_UPDATE_BEFORE_PUBLISHING/${SHA256}/g" Formula/dock.rb
+
+if [ "$LOCAL_MODE" = true ]; then
+    # For local testing, use file:// URL to local tarball
+    sed -i.bak "s|PLACEHOLDER_URL_LINE|url \"file://${TARBALL_ABSOLUTE_PATH}\"|g" Formula/dock.rb
+    sed -i.bak "s|PLACEHOLDER_SHA256_LINE|sha256 \"${SHA256}\"|g" Formula/dock.rb
+    sed -i.bak "s|PLACEHOLDER_HEAD_LINE|head \"https://github.com/jamessawle/dock.git\", branch: \"main\"|g" Formula/dock.rb
+else
+    # For release/default mode, use actual url and sha256
+    sed -i.bak "s|PLACEHOLDER_URL_LINE|url \"https://github.com/jamessawle/dock/archive/refs/tags/v${VERSION}.tar.gz\"|g" Formula/dock.rb
+    sed -i.bak "s|PLACEHOLDER_SHA256_LINE|sha256 \"${SHA256}\"|g" Formula/dock.rb
+    sed -i.bak "s|PLACEHOLDER_HEAD_LINE|head \"https://github.com/jamessawle/dock.git\", branch: \"main\"|g" Formula/dock.rb
+fi
+
 rm Formula/dock.rb.bak
 
 # Replace dependencies placeholder using Python (handles multiline properly)
