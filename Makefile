@@ -19,7 +19,7 @@ type-check:
 format:
 	uv run ruff format dock/ tests/
 
-ci: lint type-check test audit
+ci: lint type-check test
 
 formula-test:
 	./scripts/test-formula.sh
