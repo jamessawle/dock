@@ -12,7 +12,7 @@ from dock.utils.output import print_error
 
 
 @click.group()
-@click.version_option(version="0.2.0")
+@click.version_option(version="0.2.2")
 def cli() -> None:
     """Manage macOS Dock from YAML configuration."""
     pass
