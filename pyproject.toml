@@ -25,14 +25,13 @@ packages = ["dock"]
 [tool.hatch.build.targets.sdist]
 include = [
     "dock/",
-    "completions/",
     "scripts/generate-completions.sh",
     "README.md",
     "LICENSE",
 ]
-
-[tool.hatch.build.force-include]
-"completions" = "completions"
+artifacts = [
+    "completions/*",
+]
 
 [dependency-groups]
 dev = [
