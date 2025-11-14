@@ -1,0 +1,30 @@
+name: Nightly Dependency Audit
+
+on:
+  schedule:
+    # Run at 02:00 UTC every night
+    - cron: "0 2 * * *"
+  workflow_dispatch: # allow manual trigger
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Run dependency audit
+        run: make audit

@@ -1,7 +1,12 @@
-.PHONY: install test lint type-check format ci formula-test clean
+.PHONY: install audit test lint type-check format ci formula-test clean
 
 install:
 	uv sync
+
+audit:
+	uv export --group dev --no-emit-project > requirements.txt
+	python3 -m pip install -U pip-audit
+	python3 -m pip_audit -r requirements.txt
 
 test:
 	uv run pytest tests/ -v
@@ -15,7 +20,7 @@ type-check:
 format:
 	uv run ruff format dock/ tests/
 
-ci: lint type-check test
+ci: lint type-check test audit
 
 formula-test:
 	./scripts/test-formula.sh
