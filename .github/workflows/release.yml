@@ -58,7 +58,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: jamessawle/homebrew-tap
-          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          token: ${{ secrets.TAP_PUSH_TOKEN }}
           path: homebrew-tap
       
       - name: Update formula in tap
