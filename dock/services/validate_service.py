@@ -2,8 +2,9 @@
 
 import sys
 
-from pydantic import ValidationError
+from cattrs.errors import ClassValidationError
 
+from dock.config.converter import converter
 from dock.config.loader import ConfigLoader
 from dock.config.models import DockConfig
 from dock.config.validator import ConfigValidator
@@ -35,12 +36,14 @@ class ValidateService:
 
         # Parse and validate config
         try:
-            config = DockConfig.model_validate(config_data)
-        except ValidationError as e:
+            config = converter.structure(config_data, DockConfig)
+        except (ClassValidationError, ValueError, TypeError) as e:
             print_error("Configuration validation failed:")
-            for error in e.errors():
-                loc = " -> ".join(str(item) for item in error["loc"])
-                print_info(f"  {loc}: {error['msg']}")
+            if isinstance(e, ClassValidationError):
+                for exc in e.exceptions:
+                    print_info(f"  {exc}")
+            else:
+                print_info(f"  {e}")
             sys.exit(1)
 
         # Run semantic validation

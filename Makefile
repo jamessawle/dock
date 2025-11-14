@@ -1,4 +1,4 @@
-.PHONY: install test lint type-check format ci completions clean formula-test formula-update
+.PHONY: install test lint type-check format ci completions clean formula-test
 
 install:
 	uv sync
@@ -19,6 +19,9 @@ ci: lint type-check test
 
 completions:
 	./scripts/generate-completions.sh
+
+formula-test:
+	./scripts/test-formula.sh
 
 clean:
 	rm -rf .pytest_cache

@@ -3,13 +3,14 @@ class Dock < Formula
 
   desc "Manage macOS Dock from YAML configuration"
   homepage "https://github.com/jamessawle/dock"
-  url "https://github.com/jamessawle/dock/archive/refs/tags/vPLACEHOLDER_VERSION_UPDATE_BEFORE_PUBLISHING.tar.gz"
-  sha256 "PLACEHOLDER_SHA256_UPDATE_BEFORE_PUBLISHING"
+  PLACEHOLDER_URL_LINE
+  PLACEHOLDER_SHA256_LINE
   license "MIT"
-  head "https://github.com/jamessawle/dock.git", branch: "main"
+  PLACEHOLDER_HEAD_LINE
 
-  depends_on "python@3.14"
   depends_on "dockutil"
+  depends_on "libyaml"
+  depends_on "python@3.14"
 
   PLACEHOLDER_DEPENDENCIES_UPDATE_BEFORE_PUBLISHING
 
@@ -24,10 +25,10 @@ class Dock < Formula
   test do
     # Test that the command is available and shows version
     assert_match "version", shell_output("#{bin}/dock --version")
-    
+
     # Test that the command shows help
     assert_match "Manage macOS Dock", shell_output("#{bin}/dock --help")
-    
+
     # Test validate command with a simple config
     (testpath/"test-config.yml").write <<~EOS
       apps:
@@ -35,7 +36,7 @@ class Dock < Formula
       settings:
         autohide: false
     EOS
-    
+
     assert_match "valid", shell_output("#{bin}/dock validate --file #{testpath}/test-config.yml")
   end
 end

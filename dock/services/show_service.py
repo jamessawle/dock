@@ -6,6 +6,7 @@ import yaml
 
 from dock.adapters.dockutil import DockutilCommand
 from dock.adapters.plist import PlistManager
+from dock.config.converter import converter
 from dock.dock.state import DockStateReader
 from dock.utils.output import print_info
 
@@ -28,10 +29,8 @@ class ShowService:
         state_reader = DockStateReader(dockutil, plist_mgr)
         current_state = state_reader.read_full_state()
 
-        # Convert to dict and remove default values
-        config_dict = current_state.model_dump(
-            exclude_defaults=True, exclude_none=True
-        )
+        # Convert to dict
+        config_dict = converter.unstructure(current_state)
 
         # Print header
         print_info("Current dock configuration:")
