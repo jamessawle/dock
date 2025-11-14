@@ -5,8 +5,7 @@ install:
 
 audit:
 	uv export --group dev --no-emit-project > requirements.txt
-	python3 -m pip install -U pip-audit
-	python3 -m pip_audit -r requirements.txt
+	UV_PYTHON=$$(which python3) uvx pip-audit -r requirements.txt
 
 test:
 	uv run pytest tests/ -v
