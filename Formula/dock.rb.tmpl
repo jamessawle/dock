@@ -1,15 +1,16 @@
 class Dock < Formula
   include Language::Python::Virtualenv
 
-  desc "Manage macOS Dock from YAML configuration"
+  desc "macOS Dock Manager (YAML-driven, dry-run friendly)"
   homepage "https://github.com/jamessawle/dock"
   PLACEHOLDER_URL_LINE
   PLACEHOLDER_SHA256_LINE
   license "MIT"
-  PLACEHOLDER_HEAD_LINE
+  head "https://github.com/jamessawle/dock.git", branch: "main"
 
   depends_on "dockutil"
   depends_on "libyaml"
+  depends_on :macos
   depends_on "python@3.14"
 
   PLACEHOLDER_DEPENDENCIES_UPDATE_BEFORE_PUBLISHING

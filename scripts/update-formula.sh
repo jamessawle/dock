@@ -174,12 +174,10 @@ if [ "$LOCAL_MODE" = true ]; then
     # For local testing, use file:// URL to local tarball
     sed -i.bak "s|PLACEHOLDER_URL_LINE|url \"file://${TARBALL_ABSOLUTE_PATH}\"|g" Formula/dock.rb
     sed -i.bak "s|PLACEHOLDER_SHA256_LINE|sha256 \"${SHA256}\"|g" Formula/dock.rb
-    sed -i.bak "s|PLACEHOLDER_HEAD_LINE|head \"https://github.com/jamessawle/dock.git\", branch: \"main\"|g" Formula/dock.rb
 else
     # For release/default mode, use actual url and sha256
     sed -i.bak "s|PLACEHOLDER_URL_LINE|url \"https://github.com/jamessawle/dock/archive/refs/tags/v${VERSION}.tar.gz\"|g" Formula/dock.rb
     sed -i.bak "s|PLACEHOLDER_SHA256_LINE|sha256 \"${SHA256}\"|g" Formula/dock.rb
-    sed -i.bak "s|PLACEHOLDER_HEAD_LINE|head \"https://github.com/jamessawle/dock.git\", branch: \"main\"|g" Formula/dock.rb
 fi
 
 rm Formula/dock.rb.bak

@@ -73,18 +73,21 @@ jobs:
           git checkout -b "$BRANCH_NAME"
           
           git add Formula/dock.rb
-          git diff --staged --quiet || git commit -m "dock: update to version ${{ steps.version.outputs.VERSION }}"
-          git push origin "$BRANCH_NAME"
+          if ! git diff --staged --quiet; then
+            git commit -m "dock: update to version ${{ steps.version.outputs.VERSION }}"
+            git push origin "$BRANCH_NAME"
+          fi
       
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.TAP_PUSH_TOKEN }}
-          path: homebrew-tap
-          branch: update-dock-${{ steps.version.outputs.VERSION }}
-          title: "dock: update to version ${{ steps.version.outputs.VERSION }}"
-          body: |
-            Automated update of dock formula to version ${{ steps.version.outputs.VERSION }}
-            
-            Release: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.VERSION }}
-          commit-message: "dock: update to version ${{ steps.version.outputs.VERSION }}"
+        env:
+          GH_TOKEN: ${{ secrets.TAP_PUSH_TOKEN }}
+        run: |
+          cd homebrew-tap
+          gh pr create \
+            --repo jamessawle/homebrew-tap \
+            --base main \
+            --head update-dock-${{ steps.version.outputs.VERSION }} \
+            --title "dock: update to version ${{ steps.version.outputs.VERSION }}" \
+            --body "Automated update of dock formula to version ${{ steps.version.outputs.VERSION }}
+
+          Release: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.VERSION }}"
