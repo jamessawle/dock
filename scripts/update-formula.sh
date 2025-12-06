@@ -38,8 +38,7 @@ if [ "$LOCAL_MODE" = true ]; then
     echo "Local tarball: $TARBALL_ABSOLUTE_PATH"
 elif [ "$RELEASE_MODE" = true ]; then
     # Release mode: use GitHub release tarball
-    echo "Release mode: Using GitHub release tarball"
-    TARBALL_URL="https://github.com/jamessawle/dock/archive/refs/tags/v${VERSION}.tar.gz"
+    TARBALL_URL="https://github.com/jamessawle/dock/releases/download/v${VERSION}/dock_cli-${VERSION}.tar.gz"
     
     echo "Waiting for release tarball to be available..."
     sleep 5
