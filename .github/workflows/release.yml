@@ -14,7 +14,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
@@ -52,7 +52,7 @@ jobs:
         run: ./scripts/update-formula.sh --release
       
       - name: Checkout homebrew-tap repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: jamessawle/homebrew-tap
           token: ${{ secrets.TAP_PUSH_TOKEN }}
