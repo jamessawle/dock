@@ -13,7 +13,7 @@ readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.14"
 
 dependencies = [
-    "click>=8.0",
+    "click>=8.3.1",
     "pyyaml>=6.0",
     "attrs>=23.0",
     "cattrs>=23.0",
@@ -21,10 +21,10 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "pytest>=7.0",
+    "pytest>=9.0.1",
     "pytest-mock>=3.10",
-    "mypy>=1.0",
-    "ruff>=0.1.0",
+    "mypy>=1.19.1",
+    "ruff>=0.14.10",
     "types-pyyaml>=6.0",
     "pip-audit>=2.9.0",
 ]
