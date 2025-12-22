@@ -8,14 +8,26 @@ version = "0.2.2"
 description = "macOS Dock Manager (YAML-driven, dry-run friendly)"
 authors = [{name = "James Sawle"}]
 license = {text = "MIT"}
+readme = { file = "README.md", content-type = "text/markdown" }
+
 requires-python = ">=3.14"
+
 dependencies = [
     "click>=8.0",
     "pyyaml>=6.0",
     "attrs>=23.0",
     "cattrs>=23.0",
 ]
-readme = "README.md"
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0",
+    "pytest-mock>=3.10",
+    "mypy>=1.0",
+    "ruff>=0.1.0",
+    "types-pyyaml>=6.0",
+    "pip-audit>=2.9.0",
+]
 
 [project.scripts]
 dock = "dock.cli:cli"
@@ -28,15 +40,6 @@ include = [
     "dock/",
     "README.md",
     "LICENSE",
-]
-
-[dependency-groups]
-dev = [
-    "pytest>=7.0",
-    "pytest-mock>=3.10",
-    "mypy>=1.0",
-    "ruff>=0.1.0",
-    "types-pyyaml>=6.0",
 ]
 
 [tool.pytest.ini_options]
