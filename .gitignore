@@ -143,4 +143,4 @@ uv.lock
 Formula/dock.rb
 
 # Requirements file generated for dependency audit
-requirements.txt
+./requirements.txt
