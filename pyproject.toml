@@ -26,7 +26,7 @@ dev = [
     "mypy>=1.19.1",
     "ruff>=0.14.10",
     "types-pyyaml>=6.0",
-    "pip-audit>=2.9.0",
+    "pip-audit>=2.10.0",
 ]
 
 [project.scripts]
