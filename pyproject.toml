@@ -24,7 +24,7 @@ dev = [
     "pytest>=9.0.1",
     "pytest-mock>=3.10",
     "mypy>=1.19.1",
-    "ruff>=0.14.10",
+    "ruff>=0.15.10",
     "types-pyyaml>=6.0",
     "pip-audit>=2.9.0",
 ]
